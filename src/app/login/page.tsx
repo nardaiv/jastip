@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { login } from "./actions";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export const metadata: Metadata = {
   title: "Sign In | Jastip",
@@ -25,27 +15,21 @@ export default async function LoginPage({
   const params = await searchParams;
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-linear-to-br from-zinc-50 via-zinc-100 to-zinc-200 px-4 py-12 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-800">
-      {/* Background ambient glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[40%] -left-[20%] w-[80%] h-[80%] rounded-full bg-blue-500/10 blur-[120px] dark:bg-blue-900/15" />
-        <div className="absolute -bottom-[40%] -right-[20%] w-[80%] h-[80%] rounded-full bg-indigo-500/10 blur-[120px] dark:bg-indigo-900/15" />
-      </div>
-
-      <Card className="relative z-10 w-full max-w-md border-zinc-200/80 bg-white/80 shadow-2xl backdrop-blur-md transition-all duration-300 dark:border-zinc-800/80 dark:bg-zinc-900/80">
-        <CardHeader className="space-y-1.5 text-center pb-6">
-          <CardTitle className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-canvas-soft px-4 py-12 dark:bg-zinc-950 font-sans text-ink">
+      <div className="relative z-10 w-full max-w-md card-content bg-canvas border border-canvas-soft/85 shadow-lg dark:bg-zinc-900 dark:border-zinc-800">
+        <div className="space-y-2 text-center pb-6">
+          <h2 className="text-display-xs font-bold text-ink dark:text-zinc-50">
             Welcome back
-          </CardTitle>
-          <CardDescription className="text-zinc-500 dark:text-zinc-400">
+          </h2>
+          <p className="text-caption text-mute">
             Enter your email to sign in to your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
+        </div>
+        <div className="space-y-4">
           {params?.error && (
             <div
               id="signin-error"
-              className="rounded-lg bg-destructive/10 border border-destructive/20 p-3.5 text-sm text-destructive font-medium flex items-center gap-2 dark:bg-destructive/15 dark:border-destructive/25 animate-in fade-in slide-in-from-top-1"
+              className="badge-negative rounded-lg p-3.5 text-xs font-semibold flex items-center gap-2 animate-in fade-in"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -66,7 +50,7 @@ export default async function LoginPage({
           {params?.message && (
             <div
               id="signin-message"
-              className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3.5 text-sm text-emerald-600 font-medium flex items-center gap-2 dark:bg-emerald-500/15 dark:border-emerald-500/25 animate-in fade-in slide-in-from-top-1"
+              className="badge-positive rounded-lg p-3.5 text-xs font-semibold flex items-center gap-2 animate-in fade-in"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -85,45 +69,45 @@ export default async function LoginPage({
           )}
 
           <form action={login} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="signin-email">Email Address</Label>
-              <Input
+            <div className="space-y-1.5 flex flex-col">
+              <label htmlFor="signin-email" className="text-body-sm-strong text-ink dark:text-zinc-300">Email Address</label>
+              <input
                 id="signin-email"
                 name="email"
                 type="email"
                 placeholder="name@example.com"
                 required
-                className="w-full"
+                className="bg-canvas border border-ink rounded-md px-4 py-2.5 text-body-md text-ink outline-none focus:ring-2 focus:ring-primary/40 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 flex flex-col">
               <div className="flex items-center justify-between">
-                <Label htmlFor="signin-password">Password</Label>
+                <label htmlFor="signin-password" className="text-body-sm-strong text-ink dark:text-zinc-300">Password</label>
               </div>
-              <Input
+              <input
                 id="signin-password"
                 name="password"
                 type="password"
                 placeholder="••••••••"
                 required
-                className="w-full"
+                className="bg-canvas border border-ink rounded-md px-4 py-2.5 text-body-md text-ink outline-none focus:ring-2 focus:ring-primary/40 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
               />
             </div>
-            <Button type="submit" size="lg" className="w-full cursor-pointer mt-2 text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 font-semibold shadow-md transition-all active:scale-[0.99]">
+            <button type="submit" className="button-primary w-full h-12 text-sm font-semibold mt-2">
               Sign In
-            </Button>
+            </button>
           </form>
-        </CardContent>
-        <div className="px-6 pb-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        </div>
+        <div className="pt-6 text-center text-body-sm text-mute">
           Don't have an account?{" "}
           <Link
             href="/signup"
-            className="font-medium text-blue-600 hover:underline hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            className="font-semibold text-emerald-700 hover:underline dark:text-primary"
           >
             Sign up
           </Link>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useUserStore } from "@/providers/user-store-provider";
 import { logout } from "@/app/login/actions";
-import { Button } from "@/components/ui/button";
 
 export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
   const profile = useUserStore((s) => s.profile);
@@ -14,30 +13,28 @@ export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
   return (
     <div className="flex items-center gap-4">
       {/* Account Information */}
-      <div className="hidden sm:flex flex-col items-end text-xs">
-        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+      <div className="hidden sm:flex flex-col items-end text-right">
+        <span className="text-body-sm-strong text-ink dark:text-zinc-50">
           {displayName}
         </span>
-        <span className="capitalize font-medium text-zinc-500 dark:text-zinc-400">
+        <span className="capitalize text-caption text-mute">
           {displayRole}
         </span>
       </div>
 
       {/* Profile Letter Avatar */}
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold border border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-900">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas-soft text-ink font-bold border border-canvas-soft dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700">
         {avatarLetter}
       </div>
 
       {/* Logout Action */}
       <form action={logout}>
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           type="submit"
-          className="cursor-pointer font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-700 h-9"
+          className="button-tertiary text-xs py-1.5 px-3 rounded-xl h-8 font-semibold flex items-center justify-center"
         >
           Log Out
-        </Button>
+        </button>
       </form>
     </div>
   );

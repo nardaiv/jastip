@@ -28,23 +28,23 @@ export default async function UserLayout({ children }: UserLayoutProps) {
 
   return (
     <UserStoreProvider initialState={{ profile }}>
-      <div className="flex flex-col min-h-screen bg-zinc-50/50 dark:bg-zinc-950">
-        {/* Premium Sticky Authenticated Header */}
-        <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-900/80">
+      <div className="flex flex-col min-h-screen bg-canvas-soft font-sans antialiased text-ink">
+        {/* Wise-Style Sticky Header */}
+        <header className="sticky top-0 z-50 w-full bg-canvas border-b border-canvas-soft/85 py-4">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             
             {/* Logo & Navigation */}
             <div className="flex items-center gap-8">
-              <Link href="/" className="flex items-center gap-2 font-bold text-xl text-blue-600 dark:text-blue-400">
+              <Link href="/" className="flex items-center gap-2 font-display font-black text-2xl text-ink">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="h-6 w-6"
+                  className="h-6 w-6 text-primary stroke-[3px]"
                 >
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                   <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
@@ -53,17 +53,17 @@ export default async function UserLayout({ children }: UserLayoutProps) {
                 <span>Jastip</span>
               </Link>
               
-              <nav className="flex items-center gap-6 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              <nav className="flex items-center gap-6 text-body-sm-strong text-ink">
                 <Link
                   href="/dashboard"
-                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="hover:text-primary transition-colors"
                 >
                   Dashboard
                 </Link>
                 {profile?.role === "admin" && (
                   <Link
                     href="/admin"
-                    className="font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                    className="font-semibold text-negative hover:text-negative-deep transition-colors"
                   >
                     Admin Panel
                   </Link>

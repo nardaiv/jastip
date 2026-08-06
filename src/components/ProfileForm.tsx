@@ -2,10 +2,6 @@
 
 import { useState } from "react";
 import { useUserStore } from "@/providers/user-store-provider";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { z } from "zod";
 
 // Local schema for validation
@@ -50,56 +46,60 @@ export function ProfileForm() {
   };
 
   return (
-    <Card className="border-zinc-200/80 bg-white/80 shadow-md backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-900/80 mt-6">
-      <CardHeader className="space-y-1.5 pb-4">
-        <CardTitle className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+    <div className="card-content mt-6 bg-white dark:bg-zinc-900 border border-canvas-soft dark:border-zinc-800">
+      <div className="space-y-1.5 pb-4">
+        <h3 className="text-display-xs text-ink dark:text-zinc-50 font-bold">
           Edit Profile Information
-        </CardTitle>
-        <CardDescription className="text-zinc-500 dark:text-zinc-400 text-xs">
+        </h3>
+        <p className="text-caption text-mute">
           Interactive demo showing Zustand global state and local Zod form validation.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </p>
+      </div>
+      <div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive font-medium animate-in fade-in">
+            <div className="badge-negative rounded-lg p-3 text-xs font-semibold animate-in fade-in block text-center w-full">
               ⚠️ {error}
             </div>
           )}
 
           {isSuccess && (
-            <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-600 font-medium animate-in fade-in">
+            <div className="badge-positive rounded-lg p-3 text-xs font-semibold animate-in fade-in block text-center w-full">
               ✓ Profile updated successfully in Zustand store!
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-fullname">Full Name</Label>
-            <Input
+          <div className="space-y-1.5 flex flex-col">
+            <label htmlFor="edit-fullname" className="text-body-sm-strong text-ink dark:text-zinc-300">
+              Full Name
+            </label>
+            <input
               id="edit-fullname"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Jane Doe"
-              className="w-full"
+              className="bg-canvas border border-ink rounded-md px-4 py-2.5 text-body-md text-ink outline-none focus:ring-2 focus:ring-primary/40 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-phone">Phone Number</Label>
-            <Input
+          <div className="space-y-1.5 flex flex-col">
+            <label htmlFor="edit-phone" className="text-body-sm-strong text-ink dark:text-zinc-300">
+              Phone Number
+            </label>
+            <input
               id="edit-phone"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+62812345678"
-              className="w-full"
+              className="bg-canvas border border-ink rounded-md px-4 py-2.5 text-body-md text-ink outline-none focus:ring-2 focus:ring-primary/40 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
             />
           </div>
 
-          <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-xs">
+          <button type="submit" className="button-primary w-full h-11 text-sm font-semibold">
             Save Changes
-          </Button>
+          </button>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
