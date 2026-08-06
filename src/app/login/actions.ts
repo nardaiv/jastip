@@ -3,16 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { LoginSchema, SignupSchema } from "@/types/database";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
 
-  const credentials = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-  const { error } = await supabase.auth.signInWithPassword(credentials);
+  // Validate credentials with Zod
+  const result = LoginSchema.safeParse({ email, password });
+  if (!result.success) {
+    const errorMsg = result.error.issues[0].message;
+    redirect(`/login?error=${encodeURIComponent(errorMsg)}`);
+  }
+
+  const { error } = await supabase.auth.signInWithPassword(result.data);
 
   if (error) {
     redirect("/login?error=Invalid email or password");
@@ -30,13 +36,20 @@ export async function signup(formData: FormData) {
   const fullName = formData.get("full_name") as string;
   const role = (formData.get("role") as string) || "buyer"; // Default fallback
 
+  // Validate signup fields with Zod
+  const result = SignupSchema.safeParse({ email, password, full_name: fullName, role });
+  if (!result.success) {
+    const errorMsg = result.error.issues[0].message;
+    redirect(`/signup?error=${encodeURIComponent(errorMsg)}`);
+  }
+
   const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
+    email: result.data.email,
+    password: result.data.password,
     options: {
       data: {
-        full_name: fullName,
-        role: role, // Sent to database trigger as raw_user_meta_data
+        full_name: result.data.full_name,
+        role: result.data.role, // Sent to database trigger as raw_user_meta_data
       },
     },
   });

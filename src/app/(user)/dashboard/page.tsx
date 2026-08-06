@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { logout } from "@/app/login/actions";
+import { DashboardProfileGrid } from "@/components/DashboardProfileGrid";
+import { ProfileForm } from "@/components/ProfileForm";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -11,40 +11,23 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
   return (
-    <div className="max-w-4xl mx-auto p-8">
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 space-y-6">
-        <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">User Dashboard</h1>
-            <p className="text-gray-500 text-sm mt-0.5">
-              Manage your personal information and preferences
-            </p>
-          </div>
-          <form action={logout}>
-            <Button variant="outline" type="submit" className="cursor-pointer font-medium hover:bg-zinc-50 border-zinc-200">
-              Log Out
-            </Button>
-          </form>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="bg-white rounded-2xl shadow-xs p-8 border border-zinc-200/80 dark:bg-zinc-900 dark:border-zinc-800 space-y-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">User Dashboard</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
+            Manage your personal profile and account settings.
+          </p>
         </div>
 
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Logged in as:{" "}
-            <span className="font-semibold text-gray-800">{user.email}</span>
-          </p>
-          <div>
-            <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold uppercase tracking-wider border border-blue-100">
-              Role: {profile?.role}
-            </span>
-          </div>
-        </div>
+        <div className="h-px bg-zinc-200/85 dark:bg-zinc-800" />
+
+        {/* Dynamic client-side reactive profile data grid using Zustand */}
+        <DashboardProfileGrid fallbackEmail={user.email || ""} />
+
+        {/* Dynamic profile edit form validating with Zod and updating Zustand store */}
+        <ProfileForm />
       </div>
     </div>
   );
