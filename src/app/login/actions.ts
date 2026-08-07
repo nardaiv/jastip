@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LoginSchema, SignupSchema } from "@/types/database";
+import { json } from "zod";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -22,6 +23,12 @@ export async function login(formData: FormData) {
 
   if (error) {
     redirect("/login?error=Invalid email or password");
+  }
+
+  const { data } = await supabase.from("profiles").select('role').eq('email', email).single();
+  if (data?.role === "admin") {
+    revalidatePath("/", "layout");
+    redirect("/admin");
   }
 
   revalidatePath("/", "layout");

@@ -83,9 +83,10 @@ export default async function Home() {
               </div>
 
               <h1 className="text-display-xl text-ink font-black tracking-tight leading-[1.1]">
-                Buy anything from anywhere, <br />
+                Buy anything from  <br />
                 <span className="text-emerald-700 dark:text-primary">
-                  delivered by travelers.
+                  {/* delivered by travelers. */}
+                  Anywhere.
                 </span>
               </h1>
 
@@ -119,7 +120,7 @@ export default async function Home() {
                     </div>
                     <div>
                       <h4 className="text-body-sm-strong text-ink">Alex Morgan</h4>
-                      <span className="text-caption text-mute">⭐️ 4.9 (42 reviews)</span>
+                      {/* <span className="text-caption text-mute">⭐️ 4.9 (42 reviews)</span> */}
                     </div>
                   </div>
                   <span className="badge-positive">
@@ -134,17 +135,17 @@ export default async function Home() {
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
-                    <span className="text-caption font-semibold text-mute">DEPARTING FROM</span>
-                    <span className="text-body-sm-strong text-ink">Tokyo, Japan (NRT)</span>
+                    {/* <span className="text-caption font-semibold text-mute">DEPARTING FROM</span> */}
+                    <span className="text-body-sm-strong text-ink">Tokyo, Japan</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  {/* <div className="flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-primary">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
                     <span className="text-caption font-semibold text-mute">ARRIVING TO</span>
                     <span className="text-body-sm-strong text-ink">Jakarta, Indonesia (CGK)</span>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Trip Details */}
@@ -153,16 +154,16 @@ export default async function Home() {
                     <span className="text-mute">Delivery Date</span>
                     <span className="font-semibold text-ink">Aug 20, 2026</span>
                   </div>
-                  <div className="flex justify-between text-caption">
+                  {/* <div className="flex justify-between text-caption">
                     <span className="text-mute">Accepting up to</span>
                     <span className="font-semibold text-ink">10 kg remaining</span>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Call to action inside card */}
                 <Link href={user ? "/dashboard" : "/signup"} className="block mt-5">
                   <button className="button-primary w-full text-xs font-semibold py-2.5 rounded-xl">
-                    Request Custom Purchase
+                    Request Item {/* Custom Purchase*/}
                   </button>
                 </Link>
               </div>
@@ -268,10 +269,10 @@ export default async function Home() {
             <div className="card-content space-y-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <span className="badge-positive uppercase font-bold text-xs">Aug 15</span>
-                <span className="text-caption text-mute">Available: 8 kg</span>
+                {/* <span className="text-caption text-mute">Available: 8 kg</span> */}
               </div>
               <div className="space-y-1">
-                <h4 className="font-display font-black text-lg text-ink">Singapore (SIN) ➔ Jakarta (CGK)</h4>
+                <h4 className="font-display font-black text-lg text-ink">Singapore</h4>
                 <p className="text-caption text-mute">Traveler: Clarissa W.</p>
               </div>
               <Link href={user ? "/dashboard" : "/signup"} className="block">
@@ -285,10 +286,10 @@ export default async function Home() {
             <div className="card-content space-y-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <span className="badge-positive uppercase font-bold text-xs">Aug 24</span>
-                <span className="text-caption text-mute">Available: 15 kg</span>
+                {/* <span className="text-caption text-mute">Available: 15 kg</span> */}
               </div>
               <div className="space-y-1">
-                <h4 className="font-display font-black text-lg text-ink">Seoul, KR (ICN) ➔ Jakarta (CGK)</h4>
+                <h4 className="font-display font-black text-lg text-ink">Seoul, KR (ICN)</h4>
                 <p className="text-caption text-mute">Traveler: Min-Ho K.</p>
               </div>
               <Link href={user ? "/dashboard" : "/signup"} className="block">
@@ -302,10 +303,10 @@ export default async function Home() {
             <div className="card-content space-y-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <span className="badge-positive uppercase font-bold text-xs">Sep 02</span>
-                <span className="text-caption text-mute">Available: 5 kg</span>
+                {/* <span className="text-caption text-mute">Available: 5 kg</span> */}
               </div>
               <div className="space-y-1">
-                <h4 className="font-display font-black text-lg text-ink">Bangkok, TH (BKK) ➔ Surabaya (SUB)</h4>
+                <h4 className="font-display font-black text-lg text-ink">Bangkok, TH</h4>
                 <p className="text-caption text-mute">Traveler: Somchai P.</p>
               </div>
               <Link href={user ? "/dashboard" : "/signup"} className="block">
