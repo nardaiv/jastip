@@ -8,8 +8,9 @@ import {
   ShieldCheck,
   Search,
   ArrowRight,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
+import Fuse from "fuse.js";
 
 interface Profile {
   id: string;
@@ -69,7 +70,7 @@ const DUMMY_TRIPS = [
     date: "Sep 10, 2026",
     baggage: "20 kg remaining",
     status: "cancelled",
-  }
+  },
 ];
 
 // Dummy Requests Data
@@ -118,7 +119,7 @@ const DUMMY_REQUESTS = [
     traveler: "None",
     status: "cancelled",
     escrow: "Refunded to Buyer",
-  }
+  },
 ];
 
 // Fallback Dummy Profiles (if DB is empty or fails)
@@ -131,64 +132,81 @@ const DUMMY_PROFILES: Profile[] = [
 ];
 
 export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<"users" | "trips" | "requests">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "trips" | "requests">(
+    "users",
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   // Merge database profiles with dummy profiles so there is always realistic data
   const usersList = useMemo(() => {
     const dbProfiles = initialProfiles || [];
-    const dbEmails = new Set(dbProfiles.map(p => p.email?.toLowerCase()).filter(Boolean));
-    const uniqueDummys = DUMMY_PROFILES.filter(p => !p.email || !dbEmails.has(p.email.toLowerCase()));
+    const dbEmails = new Set(
+      dbProfiles.map((p) => p.email?.toLowerCase()).filter(Boolean),
+    );
+    const uniqueDummys = DUMMY_PROFILES.filter(
+      (p) => !p.email || !dbEmails.has(p.email.toLowerCase()),
+    );
     return [...dbProfiles, ...uniqueDummys];
   }, [initialProfiles]);
 
   // Statistics summaries
   const stats = useMemo(() => {
     const totalUsers = usersList.length;
-    const activeTripsCount = DUMMY_TRIPS.filter(t => t.status === "active" || t.status === "upcoming").length;
-    const pendingRequestsCount = DUMMY_REQUESTS.filter(r => r.status === "pending" || r.status === "accepted").length;
+    const activeTripsCount = DUMMY_TRIPS.filter(
+      (t) => t.status === "active" || t.status === "upcoming",
+    ).length;
+    const pendingRequestsCount = DUMMY_REQUESTS.filter(
+      (r) => r.status === "pending" || r.status === "accepted",
+    ).length;
     return {
       users: totalUsers,
       trips: activeTripsCount,
       requests: pendingRequestsCount,
-      escrow: "$1,643.00"
+      escrow: "$1,643.00",
     };
   }, [usersList]);
 
-  // Filtering based on search query
+  const usersFuse = useMemo(() => {
+    return new Fuse(usersList, {
+      keys: ["full_name", "email", "id", "role"],
+      threshold: 0.3,
+      ignoreLocation: true,
+    });
+  }, [usersList]);
+
+  const tripsFuse = useMemo(() => {
+    return new Fuse(DUMMY_TRIPS, {
+      keys: ["id", "traveler", "from", "to", "status", "baggage", "date"],
+      threshold: 0.3,
+      ignoreLocation: true,
+    });
+  }, []);
+
+  const requestsFuse = useMemo(() => {
+    return new Fuse(DUMMY_REQUESTS, {
+      keys: ["id", "buyer", "item", "price", "traveler", "status", "escrow"],
+      threshold: 0.3,
+      ignoreLocation: true,
+    });
+  }, []);
+
   const filteredUsers = useMemo(() => {
-    if (!searchQuery) return usersList;
-    const q = searchQuery.toLowerCase();
-    return usersList.filter(u =>
-      (u.full_name?.toLowerCase().includes(q)) ||
-      (u.email?.toLowerCase().includes(q)) ||
-      (u.id.toLowerCase().includes(q)) ||
-      (u.role.toLowerCase().includes(q))
-    );
-  }, [usersList, searchQuery]);
+    const query = searchQuery.trim();
+    if (!query) return usersList;
+    return usersFuse.search(query).map((result) => result.item);
+  }, [usersFuse, usersList, searchQuery]);
 
   const filteredTrips = useMemo(() => {
-    if (!searchQuery) return DUMMY_TRIPS;
-    const q = searchQuery.toLowerCase();
-    return DUMMY_TRIPS.filter(t =>
-      t.traveler.toLowerCase().includes(q) ||
-      t.from.toLowerCase().includes(q) ||
-      t.to.toLowerCase().includes(q) ||
-      t.status.toLowerCase().includes(q)
-    );
-  }, [searchQuery]);
+    const query = searchQuery.trim();
+    if (!query) return DUMMY_TRIPS;
+    return tripsFuse.search(query).map((result) => result.item);
+  }, [tripsFuse, searchQuery]);
 
   const filteredRequests = useMemo(() => {
-    if (!searchQuery) return DUMMY_REQUESTS;
-    const q = searchQuery.toLowerCase();
-    return DUMMY_REQUESTS.filter(r =>
-      r.buyer.toLowerCase().includes(q) ||
-      r.item.toLowerCase().includes(q) ||
-      r.traveler.toLowerCase().includes(q) ||
-      r.status.toLowerCase().includes(q) ||
-      r.escrow.toLowerCase().includes(q)
-    );
-  }, [searchQuery]);
+    const query = searchQuery.trim();
+    if (!query) return DUMMY_REQUESTS;
+    return requestsFuse.search(query).map((result) => result.item);
+  }, [requestsFuse, searchQuery]);
 
   return (
     <div className="space-y-8">
@@ -197,8 +215,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
         {/* Users Stats Card */}
         <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-zinc-900 dark:border-zinc-800/80">
           <div className="space-y-1">
-            <span className="text-caption font-semibold text-mute uppercase tracking-wider">Total Members</span>
-            <p className="text-display-xs font-black text-ink dark:text-zinc-50">{stats.users}</p>
+            <span className="text-caption font-semibold text-mute uppercase tracking-wider">
+              Total Members
+            </span>
+            <p className="text-display-xs font-black text-ink dark:text-zinc-50">
+              {stats.users}
+            </p>
             <div className="flex items-center gap-1 text-[10px] text-positive font-bold">
               <TrendingUp className="h-3 w-3" />
               <span>+12% vs last month</span>
@@ -212,8 +234,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
         {/* Trips Stats Card */}
         <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-zinc-900 dark:border-zinc-800/80">
           <div className="space-y-1">
-            <span className="text-caption font-semibold text-mute uppercase tracking-wider">Active Itineraries</span>
-            <p className="text-display-xs font-black text-ink dark:text-zinc-50">{stats.trips}</p>
+            <span className="text-caption font-semibold text-mute uppercase tracking-wider">
+              Active Itineraries
+            </span>
+            <p className="text-display-xs font-black text-ink dark:text-zinc-50">
+              {stats.trips}
+            </p>
             <div className="flex items-center gap-1 text-[10px] text-positive font-bold">
               <TrendingUp className="h-3 w-3" />
               <span>+3 new departures today</span>
@@ -227,8 +253,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
         {/* Requests Stats Card */}
         <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-zinc-900 dark:border-zinc-800/80">
           <div className="space-y-1">
-            <span className="text-caption font-semibold text-mute uppercase tracking-wider">Open Orders</span>
-            <p className="text-display-xs font-black text-ink dark:text-zinc-50">{stats.requests}</p>
+            <span className="text-caption font-semibold text-mute uppercase tracking-wider">
+              Open Orders
+            </span>
+            <p className="text-display-xs font-black text-ink dark:text-zinc-50">
+              {stats.requests}
+            </p>
             <div className="flex items-center gap-1 text-[10px] text-zinc-500">
               <span>96% fulfillment rate</span>
             </div>
@@ -241,8 +271,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
         {/* Escrow Balance Card */}
         <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-zinc-900 dark:border-zinc-800/80">
           <div className="space-y-1">
-            <span className="text-caption font-semibold text-mute uppercase tracking-wider">Escrow Balance</span>
-            <p className="text-display-xs font-black text-ink dark:text-zinc-50">{stats.escrow}</p>
+            <span className="text-caption font-semibold text-mute uppercase tracking-wider">
+              Escrow Balance
+            </span>
+            <p className="text-display-xs font-black text-ink dark:text-zinc-50">
+              {stats.escrow}
+            </p>
             <div className="flex items-center gap-1 text-[10px] text-positive font-bold">
               <span>Secured by Smart Trust</span>
             </div>
@@ -258,30 +292,39 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
         {/* Navigation Tabs */}
         <div className="flex bg-canvas-soft p-1 rounded-xl w-fit dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800">
           <button
-            onClick={() => { setActiveTab("users"); setSearchQuery(""); }}
+            onClick={() => {
+              setActiveTab("users");
+              setSearchQuery("");
+            }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "users"
-                ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-                : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
+              : "text-mute hover:text-ink dark:hover:text-white"
               }`}
           >
             <Users className="h-4 w-4" />
             <span>Users ({filteredUsers.length})</span>
           </button>
           <button
-            onClick={() => { setActiveTab("trips"); setSearchQuery(""); }}
+            onClick={() => {
+              setActiveTab("trips");
+              setSearchQuery("");
+            }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "trips"
-                ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-                : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
+              : "text-mute hover:text-ink dark:hover:text-white"
               }`}
           >
             <Plane className="h-4 w-4" />
             <span>Trips ({filteredTrips.length})</span>
           </button>
           <button
-            onClick={() => { setActiveTab("requests"); setSearchQuery(""); }}
+            onClick={() => {
+              setActiveTab("requests");
+              setSearchQuery("");
+            }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "requests"
-                ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-                : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
+              : "text-mute hover:text-ink dark:hover:text-white"
               }`}
           >
             <ShoppingBag className="h-4 w-4" />
@@ -320,23 +363,33 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
               <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-mute">
+                    <td
+                      colSpan={4}
+                      className="px-6 py-12 text-center text-mute"
+                    >
                       No matching user profiles found.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((profile) => (
-                    <tr key={profile.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
+                    <tr
+                      key={profile.id}
+                      className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors"
+                    >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-full bg-canvas-soft text-ink font-bold border border-canvas-soft flex items-center justify-center dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700">
-                            {(profile.full_name || profile.email || "U")[0].toUpperCase()}
+                            {(profile.full_name ||
+                              profile.email ||
+                              "U")[0].toUpperCase()}
                           </div>
                           <div>
                             <div className="font-semibold text-zinc-900 dark:text-zinc-100">
                               {profile.full_name || "Anonymous Member"}
                             </div>
-                            <div className="text-xs text-mute">{profile.email || "No email"}</div>
+                            <div className="text-xs text-mute">
+                              {profile.email || "No email"}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -344,20 +397,24 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                         {profile.id}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${profile.role === "admin"
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${profile.role === "admin"
                             ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50"
                             : profile.role === "seller"
                               ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
                               : "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
-                          }`}>
+                            }`}
+                        >
                           {profile.role}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${profile.is_active
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${profile.is_active
                             ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
                             : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                          }`}>
+                            }`}
+                        >
                           {profile.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
@@ -385,13 +442,19 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
               <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
                 {filteredTrips.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-mute">
+                    <td
+                      colSpan={6}
+                      className="px-6 py-12 text-center text-mute"
+                    >
                       No matching trips found.
                     </td>
                   </tr>
                 ) : (
                   filteredTrips.map((trip) => (
-                    <tr key={trip.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
+                    <tr
+                      key={trip.id}
+                      className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors"
+                    >
                       <td className="px-6 py-4 font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                         {trip.id}
                       </td>
@@ -412,14 +475,16 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                         {trip.date}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${trip.status === "completed"
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${trip.status === "completed"
                             ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
                             : trip.status === "active"
                               ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
                               : trip.status === "upcoming"
                                 ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
                                 : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                          }`}>
+                            }`}
+                        >
                           {trip.status}
                         </span>
                       </td>
@@ -448,13 +513,19 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
               <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
                 {filteredRequests.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-mute">
+                    <td
+                      colSpan={7}
+                      className="px-6 py-12 text-center text-mute"
+                    >
                       No matching shopping requests found.
                     </td>
                   </tr>
                 ) : (
                   filteredRequests.map((req) => (
-                    <tr key={req.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
+                    <tr
+                      key={req.id}
+                      className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors"
+                    >
                       <td className="px-6 py-4 font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                         {req.id}
                       </td>
@@ -469,35 +540,42 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                       </td>
                       <td className="px-6 py-4 text-xs text-zinc-600 dark:text-zinc-400">
                         {req.traveler === "None" ? (
-                          <span className="text-mute font-normal italic">Unassigned</span>
+                          <span className="text-mute font-normal italic">
+                            Unassigned
+                          </span>
                         ) : (
                           <span>{req.traveler}</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
-                          <span className={`h-1.5 w-1.5 rounded-full ${req.escrow.includes("Held")
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${req.escrow.includes("Held")
                               ? "bg-amber-500 animate-pulse"
                               : req.escrow.includes("Released")
                                 ? "bg-emerald-500"
                                 : req.escrow.includes("Refunded")
                                   ? "bg-red-500"
                                   : "bg-zinc-400"
-                            }`} />
+                              }`}
+                          />
                           <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
                             {req.escrow}
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${req.status === "delivered"
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${req.status === "delivered"
                             ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
-                            : req.status === "purchased" || req.status === "accepted"
+                            : req.status === "purchased" ||
+                              req.status === "accepted"
                               ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
                               : req.status === "pending"
                                 ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
                                 : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                          }`}>
+                            }`}
+                        >
                           {req.status}
                         </span>
                       </td>
