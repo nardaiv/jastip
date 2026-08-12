@@ -21,6 +21,16 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Fuse from "fuse.js";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectLabel,
+  SelectGroup
+} from "@/components/ui/select";
+import { SelectGroupLabel } from "@base-ui/react";
 
 interface Profile {
   id: string;
@@ -30,15 +40,88 @@ interface Profile {
   full_name?: string | null;
 }
 
+export interface Trip {
+  id: string;
+  seller_id: string;
+  title: string;
+  destination_country: string;
+  destination_city: string | null;
+  start_date: string;
+  end_date: string;
+  max_request_slots: number | null;
+  notes: string | null;
+  status: "upcoming" | "active" | "completed" | "cancelled" | "draft" | string;
+  created_at?: string;
+  updated_at?: string;
+  seller?: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+  } | null;
+}
+
 type UserSortField = "name" | "id" | "role" | "status";
-type TripSortField = "id" | "traveler" | "route" | "baggage" | "date" | "status";
+type TripSortField =
+  | "title"
+  | "id"
+  | "traveler"
+  | "destination"
+  | "slots"
+  | "date"
+  | "status";
+export interface ItemRequest {
+  id: string;
+  trip_id: string;
+  buyer_id: string;
+  item_name: string;
+  description: string | null;
+  quantity: number;
+  estimated_price: number | null;
+  currency: string | null;
+  agreed_price: number | null;
+  jastip_fee: number | null;
+  shipping_fee: number | null;
+  total_price: number | null;
+  reference_link: string | null;
+  image_url: string | null;
+  status:
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "purchased"
+  | "delivered"
+  | "cancelled"
+  | string;
+  rejection_reason: string | null;
+  created_at?: string;
+  updated_at?: string;
+  buyer?: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+  } | null;
+  trip?: {
+    id: string;
+    title?: string | null;
+    seller_id?: string;
+    destination_country?: string;
+    destination_city?: string | null;
+    seller?: {
+      id: string;
+      full_name?: string | null;
+      email?: string | null;
+    } | null;
+  } | null;
+}
+
 type RequestSortField =
+  | "item"
   | "id"
   | "buyer"
-  | "item"
   | "price"
   | "traveler"
-  | "escrow"
+  | "quantity"
+  | "date"
   | "status";
 
 type SortDirection = "asc" | "desc";
@@ -46,125 +129,80 @@ type StatusFilter = "all" | "active" | "inactive";
 type RoleFilter = "all" | "admin" | "seller" | "buyer";
 type TripStatusFilter =
   | "all"
-  | "active"
   | "upcoming"
+  | "active"
   | "completed"
-  | "cancelled";
+  | "cancelled"
+  | "draft";
 type RequestStatusFilter =
   | "all"
   | "pending"
   | "accepted"
+  | "rejected"
   | "purchased"
   | "delivered"
   | "cancelled";
-type RequestEscrowFilter = "all" | "held" | "released" | "awaiting" | "refunded";
 
 interface AdminDashboardProps {
   initialProfiles: Profile[] | null;
+  initialTrips?: Trip[] | null;
+  initialItemRequests?: ItemRequest[] | null;
 }
 
-// Dummy Trips Data
-const DUMMY_TRIPS = [
-  {
-    id: "TRIP-001",
-    traveler: "Clarissa Wijaya",
-    from: "Singapore (SIN)",
-    to: "Jakarta (CGK)",
-    date: "Aug 15, 2026",
-    baggage: "8 kg remaining",
-    status: "upcoming",
-  },
-  {
-    id: "TRIP-002",
-    traveler: "Min-Ho Kim",
-    from: "Seoul, KR (ICN)",
-    to: "Jakarta (CGK)",
-    date: "Aug 24, 2026",
-    baggage: "15 kg remaining",
-    status: "active",
-  },
-  {
-    id: "TRIP-003",
-    traveler: "Somchai Prasert",
-    from: "Bangkok, TH (BKK)",
-    to: "Surabaya (SUB)",
-    date: "Sep 02, 2026",
-    baggage: "5 kg remaining",
-    status: "completed",
-  },
-  {
-    id: "TRIP-004",
-    traveler: "Alex Morgan",
-    from: "Tokyo, JP (NRT)",
-    to: "Jakarta (CGK)",
-    date: "Aug 20, 2026",
-    baggage: "10 kg remaining",
-    status: "active",
-  },
-  {
-    id: "TRIP-005",
-    traveler: "Sarah Jenkins",
-    from: "London, UK (LHR)",
-    to: "Bali (DPS)",
-    date: "Sep 10, 2026",
-    baggage: "20 kg remaining",
-    status: "cancelled",
-  },
-];
+function formatCurrency(
+  amount: number | null | undefined,
+  currency: string | null = "IDR",
+): string {
+  if (amount == null) return "-";
+  const curr = currency || "IDR";
+  try {
+    if (curr === "IDR") {
+      return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        maximumFractionDigits: 0,
+      }).format(amount);
+    }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: curr,
+    }).format(amount);
+  } catch {
+    return `${curr} ${amount.toLocaleString()}`;
+  }
+}
 
-// Dummy Requests Data
-const DUMMY_REQUESTS = [
-  {
-    id: "REQ-802",
-    buyer: "Bob Miller",
-    item: "Tokyo Banana Treat (Pack of 12)",
-    price: "$35.00",
-    traveler: "Alex Morgan",
-    status: "accepted",
-    escrow: "Held in Escrow",
-  },
-  {
-    id: "REQ-803",
-    buyer: "Jane Doe",
-    item: "K-Beauty Velvet Lip Tint",
-    price: "$18.00",
-    traveler: "Min-Ho Kim",
-    status: "purchased",
-    escrow: "Held in Escrow",
-  },
-  {
-    id: "REQ-804",
-    buyer: "Michael Chen",
-    item: "Gentle Monster Sunglasses",
-    price: "$280.00",
-    traveler: "None",
-    status: "pending",
-    escrow: "Awaiting Payment",
-  },
-  {
-    id: "REQ-805",
-    buyer: "Clara Wijaya",
-    item: "Premium Thai Milk Tea Powder",
-    price: "$25.00",
-    traveler: "Somchai Prasert",
-    status: "delivered",
-    escrow: "Released to Traveler",
-  },
-  {
-    id: "REQ-806",
-    buyer: "David Vance",
-    item: "French Perfume (Le Labo 50ml)",
-    price: "$210.00",
-    traveler: "None",
-    status: "cancelled",
-    escrow: "Refunded to Buyer",
-  },
-];
+function formatTripDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTripDateRange(startDateStr: string, endDateStr: string): string {
+  const start = formatTripDate(startDateStr);
+  const end = formatTripDate(endDateStr);
+  if (start === "-" && end === "-") return "-";
+  if (start === end) return start;
+  return `${start} – ${end}`;
+}
 
 // Fallback Dummy Profiles (if DB is empty or fails)
 const DUMMY_PROFILES: Profile[] = [];
 
-export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
+export function AdminDashboard({
+  initialProfiles,
+  initialTrips,
+  initialItemRequests,
+}: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<"users" | "trips" | "requests">(
     "users",
   );
@@ -187,10 +225,8 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
   // Requests Filter and Sort State
   const [requestStatusFilter, setRequestStatusFilter] =
     useState<RequestStatusFilter>("all");
-  const [requestEscrowFilter, setRequestEscrowFilter] =
-    useState<RequestEscrowFilter>("all");
   const [requestSortField, setRequestSortField] =
-    useState<RequestSortField>("id");
+    useState<RequestSortField>("item");
   const [requestSortOrder, setRequestSortOrder] =
     useState<SortDirection>("asc");
   const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
@@ -207,22 +243,73 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
     return [...dbProfiles, ...uniqueDummys];
   }, [initialProfiles]);
 
+  // Combine database trips with seller profile details
+  const tripsList: Trip[] = useMemo(() => {
+    const dbTrips = initialTrips || [];
+    const profilesMap = new Map((initialProfiles || []).map((p) => [p.id, p]));
+
+    return dbTrips.map((trip) => {
+      const seller =
+        trip.seller || profilesMap.get(trip.seller_id) || null;
+      return {
+        ...trip,
+        seller,
+      };
+    });
+  }, [initialTrips, initialProfiles]);
+
+  // Combine database item requests with buyer profile details & trip details
+  const requestsList: ItemRequest[] = useMemo(() => {
+    const dbRequests = initialItemRequests || [];
+    const profilesMap = new Map((initialProfiles || []).map((p) => [p.id, p]));
+    const tripsMap = new Map((initialTrips || []).map((t) => [t.id, t]));
+
+    return dbRequests.map((req) => {
+      const buyer = req.buyer || profilesMap.get(req.buyer_id) || null;
+      const trip = req.trip || tripsMap.get(req.trip_id) || null;
+      let tripWithSeller = trip;
+      if (trip && !trip.seller && trip.seller_id) {
+        tripWithSeller = {
+          ...trip,
+          seller: profilesMap.get(trip.seller_id) || null,
+        };
+      }
+      return {
+        ...req,
+        buyer,
+        trip: tripWithSeller,
+      };
+    });
+  }, [initialItemRequests, initialProfiles, initialTrips]);
+
   // Statistics summaries
   const stats = useMemo(() => {
     const totalUsers = usersList.length;
-    const activeTripsCount = DUMMY_TRIPS.filter(
+    const activeTripsCount = tripsList.filter(
       (t) => t.status === "active" || t.status === "upcoming",
     ).length;
-    const pendingRequestsCount = DUMMY_REQUESTS.filter(
+    const pendingRequestsCount = requestsList.filter(
       (r) => r.status === "pending" || r.status === "accepted",
     ).length;
+    const totalEscrowAmount = requestsList
+      .filter((r) => r.status === "accepted" || r.status === "purchased")
+      .reduce(
+        (sum, r) =>
+          sum +
+          (Number(r.total_price) ||
+            Number(r.agreed_price) ||
+            Number(r.estimated_price) ||
+            0),
+        0,
+      );
+
     return {
       users: totalUsers,
       trips: activeTripsCount,
       requests: pendingRequestsCount,
-      escrow: "$1,643.00",
+      escrow: formatCurrency(totalEscrowAmount, "IDR"),
     };
-  }, [usersList]);
+  }, [usersList, tripsList, requestsList]);
 
   const usersFuse = useMemo(() => {
     return new Fuse(usersList, {
@@ -233,25 +320,50 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
   }, [usersList]);
 
   const tripsFuse = useMemo(() => {
-    return new Fuse(DUMMY_TRIPS, {
-      keys: ["id", "traveler", "from", "to", "status", "baggage", "date"],
+    return new Fuse(tripsList, {
+      keys: [
+        "title",
+        "destination_country",
+        "destination_city",
+        "notes",
+        "id",
+        "status",
+        "seller.full_name",
+        "seller.email",
+        "seller_id",
+      ],
       threshold: 0.3,
       ignoreLocation: true,
     });
-  }, []);
+  }, [tripsList]);
 
   const requestsFuse = useMemo(() => {
-    return new Fuse(DUMMY_REQUESTS, {
-      keys: ["id", "buyer", "item", "price", "traveler", "status", "escrow"],
+    return new Fuse(requestsList, {
+      keys: [
+        "item_name",
+        "description",
+        "id",
+        "status",
+        "currency",
+        "buyer.full_name",
+        "buyer.email",
+        "buyer_id",
+        "trip.title",
+        "trip.destination_country",
+        "trip.destination_city",
+        "trip.seller.full_name",
+        "trip.seller.email",
+      ],
       threshold: 0.3,
       ignoreLocation: true,
     });
-  }, []);
+  }, [requestsList]);
 
+  // Filtered & Sorted Users
   const filteredUsers = useMemo(() => {
     let list = usersList;
     const query = searchQuery.trim();
-    if (query) {
+    if (query && activeTab === "users") {
       list = usersFuse.search(query).map((result) => result.item);
     }
 
@@ -295,6 +407,7 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
     usersFuse,
     usersList,
     searchQuery,
+    activeTab,
     userStatusFilter,
     userRoleFilter,
     userSortField,
@@ -303,9 +416,9 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
 
   // Filtered & Sorted Trips
   const filteredTrips = useMemo(() => {
-    let list = DUMMY_TRIPS;
+    let list = tripsList;
     const query = searchQuery.trim();
-    if (query) {
+    if (query && activeTab === "trips") {
       list = tripsFuse.search(query).map((result) => result.item);
     }
 
@@ -320,24 +433,30 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
     if (tripSortField) {
       list = [...list].sort((a, b) => {
         let comp = 0;
-        if (tripSortField === "id") {
+        if (tripSortField === "title") {
+          comp = (a.title || "").localeCompare(b.title || "");
+        } else if (tripSortField === "id") {
           comp = a.id.localeCompare(b.id);
         } else if (tripSortField === "traveler") {
-          comp = a.traveler.localeCompare(b.traveler);
-        } else if (tripSortField === "route") {
-          const routeA = `${a.from} -> ${a.to}`;
-          const routeB = `${b.from} -> ${b.to}`;
-          comp = routeA.localeCompare(routeB);
-        } else if (tripSortField === "baggage") {
-          const numA = parseFloat(a.baggage) || 0;
-          const numB = parseFloat(b.baggage) || 0;
-          comp = numA - numB;
+          const nameA =
+            a.seller?.full_name || a.seller?.email || a.seller_id || "";
+          const nameB =
+            b.seller?.full_name || b.seller?.email || b.seller_id || "";
+          comp = nameA.localeCompare(nameB);
+        } else if (tripSortField === "destination") {
+          const destA = `${a.destination_city || ""} ${a.destination_country}`.trim();
+          const destB = `${b.destination_city || ""} ${b.destination_country}`.trim();
+          comp = destA.localeCompare(destB);
+        } else if (tripSortField === "slots") {
+          const slotA = a.max_request_slots ?? -1;
+          const slotB = b.max_request_slots ?? -1;
+          comp = slotA - slotB;
         } else if (tripSortField === "date") {
-          const timeA = new Date(a.date).getTime() || 0;
-          const timeB = new Date(b.date).getTime() || 0;
+          const timeA = new Date(a.start_date).getTime() || 0;
+          const timeB = new Date(b.start_date).getTime() || 0;
           comp = timeA - timeB;
         } else if (tripSortField === "status") {
-          comp = a.status.localeCompare(b.status);
+          comp = (a.status || "").localeCompare(b.status || "");
         }
 
         return tripSortOrder === "asc" ? comp : -comp;
@@ -347,16 +466,18 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
     return list;
   }, [
     tripsFuse,
+    tripsList,
     searchQuery,
+    activeTab,
     tripStatusFilter,
     tripSortField,
     tripSortOrder,
   ]);
 
   const filteredRequests = useMemo(() => {
-    let list = DUMMY_REQUESTS;
+    let list = requestsList;
     const query = searchQuery.trim();
-    if (query) {
+    if (query && activeTab === "requests") {
       list = requestsFuse.search(query).map((result) => result.item);
     }
 
@@ -364,48 +485,57 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
     if (requestStatusFilter !== "all") {
       list = list.filter(
         (req) =>
-          req.status.toLowerCase() === requestStatusFilter.toLowerCase(),
+          (req.status || "").toLowerCase() ===
+          requestStatusFilter.toLowerCase(),
       );
-    }
-
-    // Filter by Escrow Status
-    if (requestEscrowFilter !== "all") {
-      list = list.filter((req) => {
-        const escrowLower = req.escrow.toLowerCase();
-        if (requestEscrowFilter === "held")
-          return escrowLower.includes("held");
-        if (requestEscrowFilter === "released")
-          return escrowLower.includes("released");
-        if (requestEscrowFilter === "awaiting")
-          return escrowLower.includes("awaiting");
-        if (requestEscrowFilter === "refunded")
-          return escrowLower.includes("refunded");
-        return true;
-      });
     }
 
     // Sort
     if (requestSortField) {
       list = [...list].sort((a, b) => {
         let comp = 0;
-        if (requestSortField === "id") {
+        if (requestSortField === "item") {
+          comp = (a.item_name || "").localeCompare(b.item_name || "");
+        } else if (requestSortField === "id") {
           comp = a.id.localeCompare(b.id);
         } else if (requestSortField === "buyer") {
-          comp = a.buyer.localeCompare(b.buyer);
-        } else if (requestSortField === "item") {
-          comp = a.item.localeCompare(b.item);
+          const nameA =
+            a.buyer?.full_name || a.buyer?.email || a.buyer_id || "";
+          const nameB =
+            b.buyer?.full_name || b.buyer?.email || b.buyer_id || "";
+          comp = nameA.localeCompare(nameB);
         } else if (requestSortField === "price") {
-          const numA =
-            parseFloat(a.price.replace(/[^0-9.]/g, "")) || 0;
-          const numB =
-            parseFloat(b.price.replace(/[^0-9.]/g, "")) || 0;
-          comp = numA - numB;
+          const priceA =
+            Number(a.total_price) ||
+            Number(a.agreed_price) ||
+            Number(a.estimated_price) ||
+            0;
+          const priceB =
+            Number(b.total_price) ||
+            Number(b.agreed_price) ||
+            Number(b.estimated_price) ||
+            0;
+          comp = priceA - priceB;
         } else if (requestSortField === "traveler") {
-          comp = a.traveler.localeCompare(b.traveler);
-        } else if (requestSortField === "escrow") {
-          comp = a.escrow.localeCompare(b.escrow);
+          const travA =
+            a.trip?.seller?.full_name ||
+            a.trip?.seller?.email ||
+            a.trip?.title ||
+            "";
+          const travB =
+            b.trip?.seller?.full_name ||
+            b.trip?.seller?.email ||
+            b.trip?.title ||
+            "";
+          comp = travA.localeCompare(travB);
+        } else if (requestSortField === "quantity") {
+          comp = (a.quantity || 1) - (b.quantity || 1);
+        } else if (requestSortField === "date") {
+          const timeA = new Date(a.created_at || "").getTime() || 0;
+          const timeB = new Date(b.created_at || "").getTime() || 0;
+          comp = timeA - timeB;
         } else if (requestSortField === "status") {
-          comp = a.status.localeCompare(b.status);
+          comp = (a.status || "").localeCompare(b.status || "");
         }
 
         return requestSortOrder === "asc" ? comp : -comp;
@@ -415,9 +545,10 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
     return list;
   }, [
     requestsFuse,
+    requestsList,
     searchQuery,
+    activeTab,
     requestStatusFilter,
-    requestEscrowFilter,
     requestSortField,
     requestSortOrder,
   ]);
@@ -550,12 +681,13 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
 
   const tripCounts = useMemo(() => {
     return {
-      active: DUMMY_TRIPS.filter((t) => t.status === "active").length,
-      upcoming: DUMMY_TRIPS.filter((t) => t.status === "upcoming").length,
-      completed: DUMMY_TRIPS.filter((t) => t.status === "completed").length,
-      cancelled: DUMMY_TRIPS.filter((t) => t.status === "cancelled").length,
+      active: tripsList.filter((t) => t.status === "active").length,
+      upcoming: tripsList.filter((t) => t.status === "upcoming").length,
+      completed: tripsList.filter((t) => t.status === "completed").length,
+      cancelled: tripsList.filter((t) => t.status === "cancelled").length,
+      draft: tripsList.filter((t) => t.status === "draft").length,
     };
-  }, []);
+  }, [tripsList]);
 
   // --- REQUEST HANDLERS ---
   const handleSortRequest = (field: RequestSortField) => {
@@ -597,16 +729,14 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
 
   const hasActiveRequestFilters =
     requestStatusFilter !== "all" ||
-    requestEscrowFilter !== "all" ||
     (activeTab === "requests" && searchQuery.trim() !== "") ||
-    requestSortField !== "id" ||
+    requestSortField !== "item" ||
     requestSortOrder !== "asc";
 
   const handleResetRequestFilters = () => {
     setRequestStatusFilter("all");
-    setRequestEscrowFilter("all");
     setSearchQuery("");
-    setRequestSortField("id");
+    setRequestSortField("item");
     setRequestSortOrder("asc");
     setSelectedRequestIds([]);
   };
@@ -620,13 +750,14 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
 
   const requestCounts = useMemo(() => {
     return {
-      pending: DUMMY_REQUESTS.filter((r) => r.status === "pending").length,
-      accepted: DUMMY_REQUESTS.filter((r) => r.status === "accepted").length,
-      purchased: DUMMY_REQUESTS.filter((r) => r.status === "purchased").length,
-      delivered: DUMMY_REQUESTS.filter((r) => r.status === "delivered").length,
-      cancelled: DUMMY_REQUESTS.filter((r) => r.status === "cancelled").length,
+      pending: requestsList.filter((r) => r.status === "pending").length,
+      accepted: requestsList.filter((r) => r.status === "accepted").length,
+      rejected: requestsList.filter((r) => r.status === "rejected").length,
+      purchased: requestsList.filter((r) => r.status === "purchased").length,
+      delivered: requestsList.filter((r) => r.status === "delivered").length,
+      cancelled: requestsList.filter((r) => r.status === "cancelled").length,
     };
-  }, []);
+  }, [requestsList]);
 
   return (
     <div className="space-y-8">
@@ -717,8 +848,8 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
               setSearchQuery("");
             }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "users"
-                ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-                : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
+              : "text-mute hover:text-ink dark:hover:text-white"
               }`}
           >
             <Users className="h-4 w-4" />
@@ -730,8 +861,8 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
               setSearchQuery("");
             }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "trips"
-                ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-                : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
+              : "text-mute hover:text-ink dark:hover:text-white"
               }`}
           >
             <Plane className="h-4 w-4" />
@@ -743,8 +874,8 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
               setSearchQuery("");
             }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "requests"
-                ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-                : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
+              : "text-mute hover:text-ink dark:hover:text-white"
               }`}
           >
             <ShoppingBag className="h-4 w-4" />
@@ -772,63 +903,69 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
         <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 dark:bg-zinc-900 dark:border-zinc-800 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Left: Filter Controls */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 mr-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>Filters:</span>
               </div>
 
-              {/* Status Filter Selector */}
-              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setUserStatusFilter("all")}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${userStatusFilter === "all"
-                      ? "bg-white text-zinc-900 shadow-xs font-semibold dark:bg-zinc-700 dark:text-white"
-                      : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
-                    }`}
+              {/* Status Filter Dropdown */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-mute font-medium">Status:</span>
+                <Select
+                  value={userStatusFilter}
+                  onValueChange={(val) =>
+                    setUserStatusFilter((val ?? "all") as StatusFilter)
+                  }
                 >
-                  All Status ({usersList.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserStatusFilter("active")}
-                  className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${userStatusFilter === "active"
-                      ? "bg-emerald-500 text-white shadow-xs font-semibold"
-                      : "text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
-                    }`}
-                >
-                  <CheckCircle2 className="h-3 w-3" />
-                  <span>Active ({activeUsersCount})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserStatusFilter("inactive")}
-                  className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${userStatusFilter === "inactive"
-                      ? "bg-zinc-600 text-white shadow-xs font-semibold dark:bg-zinc-600"
-                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
-                    }`}
-                >
-                  <XCircle className="h-3 w-3" />
-                  <span>Inactive ({inactiveUsersCount})</span>
-                </button>
+                  <SelectTrigger className="h-9 min-w-[140px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Status</SelectLabel>
+                      <SelectItem value="all">
+                        All Status ({usersList.length})
+                      </SelectItem>
+                      <SelectItem value="active">
+                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>Active ({activeUsersCount})</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="inactive">
+                        <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 font-medium">
+                          <XCircle className="h-3.5 w-3.5" />
+                          <span>Inactive ({inactiveUsersCount})</span>
+                        </div>
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Role Filter Dropdown */}
-              <div className="relative">
-                <select
-                  aria-label="Filter by Role"
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-mute font-medium">Role:</span>
+                <Select
                   value={userRoleFilter}
-                  onChange={(e) =>
-                    setUserRoleFilter(e.target.value as RoleFilter)
+                  onValueChange={(val) =>
+                    setUserRoleFilter((val ?? "all") as RoleFilter)
                   }
-                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-wise-green cursor-pointer"
                 >
-                  <option value="all">All Roles</option>
-                  <option value="admin">Admin</option>
-                  <option value="seller">Seller</option>
-                  <option value="buyer">Buyer</option>
-                </select>
+                  <SelectTrigger className="h-9 min-w-[125px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Role</SelectLabel>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="seller">Seller</SelectItem>
+                      <SelectItem value="buyer">Buyer</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Reset Filter Button */}
@@ -846,23 +983,29 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
             </div>
 
             {/* Right: Quick Sort & Selection Utilities */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Sort By Dropdown */}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-mute font-medium">Sort by:</span>
-                <select
-                  aria-label="Sort users by column"
+                <Select
                   value={userSortField}
-                  onChange={(e) =>
-                    setUserSortField(e.target.value as UserSortField)
+                  onValueChange={(val) =>
+                    setUserSortField((val ?? "name") as UserSortField)
                   }
-                  className="px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-wise-green cursor-pointer"
                 >
-                  <option value="name">User Details (Name/Email)</option>
-                  <option value="id">User ID</option>
-                  <option value="role">Assigned Role</option>
-                  <option value="status">Account Status</option>
-                </select>
+                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Sort by</SelectLabel>
+                      <SelectItem value="name">User Details</SelectItem>
+                      <SelectItem value="id">User ID</SelectItem>
+                      <SelectItem value="role">Assigned Role</SelectItem>
+                      <SelectItem value="status">Account Status</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
 
                 {/* Ascending / Descending Toggle Button */}
                 <button
@@ -870,41 +1013,58 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                   onClick={() =>
                     setUserSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
                   }
-                  className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-1 h-9 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl text-xs font-medium transition-colors cursor-pointer"
                   title={`Current order: ${userSortOrder === "asc" ? "Ascending" : "Descending"
                     }. Click to toggle.`}
                 >
                   {userSortOrder === "asc" ? (
                     <>
                       <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
-                      <span>Ascending</span>
+                      <span>Asc</span>
                     </>
                   ) : (
                     <>
                       <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
-                      <span>Descending</span>
+                      <span>Desc</span>
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Quick Select by Status Utility */}
-              <div className="flex items-center gap-1 border-l border-zinc-200 dark:border-zinc-700 pl-2">
+              {/* Quick Select by Status Dropdown */}
+              <div className="flex items-center gap-1.5 border-l border-zinc-200 dark:border-zinc-700 pl-2">
                 <span className="text-xs text-mute font-medium">Select:</span>
-                <button
-                  type="button"
-                  onClick={() => handleSelectUserByStatus("active")}
-                  className="px-2 py-1 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/50 rounded-md font-medium transition-colors cursor-pointer"
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    if (val === "all") handleSelectAllUsers();
+                    else if (val === "active")
+                      handleSelectUserByStatus("active");
+                    else if (val === "inactive")
+                      handleSelectUserByStatus("inactive");
+                    else if (val === "clear") setSelectedUserIds([]);
+                  }}
                 >
-                  Active
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectUserByStatus("inactive")}
-                  className="px-2 py-1 text-xs text-zinc-700 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-md font-medium transition-colors cursor-pointer"
-                >
-                  Inactive
-                </button>
+                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="Quick select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Quick Select</SelectLabel>
+
+                      <SelectItem value="all">
+                        Select All ({filteredUsers.length})
+                      </SelectItem>
+                      <SelectItem value="active">
+                        Select Active ({activeUsersCount})
+                      </SelectItem>
+                      <SelectItem value="inactive">
+                        Select Inactive ({inactiveUsersCount})
+                      </SelectItem>
+                      <SelectItem value="clear">Clear Selection</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -948,64 +1108,50 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
         <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 dark:bg-zinc-900 dark:border-zinc-800 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Left: Filter Controls */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 mr-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>Filters:</span>
               </div>
 
-              {/* Status Filter Selector */}
-              <div className="flex flex-wrap items-center gap-1 bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setTripStatusFilter("all")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${tripStatusFilter === "all"
-                      ? "bg-white text-zinc-900 shadow-xs font-semibold dark:bg-zinc-700 dark:text-white"
-                      : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
-                    }`}
+              {/* Status Filter Dropdown */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-mute font-medium">Status:</span>
+                <Select
+                  value={tripStatusFilter}
+                  onValueChange={(val) =>
+                    setTripStatusFilter((val ?? "all") as TripStatusFilter)
+                  }
                 >
-                  All ({DUMMY_TRIPS.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTripStatusFilter("active")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${tripStatusFilter === "active"
-                      ? "bg-blue-600 text-white shadow-xs font-semibold"
-                      : "text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                    }`}
-                >
-                  Active ({tripCounts.active})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTripStatusFilter("upcoming")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${tripStatusFilter === "upcoming"
-                      ? "bg-amber-500 text-white shadow-xs font-semibold"
-                      : "text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
-                    }`}
-                >
-                  Upcoming ({tripCounts.upcoming})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTripStatusFilter("completed")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${tripStatusFilter === "completed"
-                      ? "bg-emerald-600 text-white shadow-xs font-semibold"
-                      : "text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
-                    }`}
-                >
-                  Completed ({tripCounts.completed})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTripStatusFilter("cancelled")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${tripStatusFilter === "cancelled"
-                      ? "bg-zinc-600 text-white shadow-xs font-semibold dark:bg-zinc-600"
-                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
-                    }`}
-                >
-                  Cancelled ({tripCounts.cancelled})
-                </button>
+                  <SelectTrigger className="h-9 min-w-[150px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Trip Status</SelectLabel>
+                      <SelectItem value="all">
+                        All Status ({tripsList.length})
+                      </SelectItem>
+                      <SelectItem value="upcoming">
+                        Upcoming ({tripCounts.upcoming})
+                      </SelectItem>
+                      <SelectItem value="active">
+                        Active ({tripCounts.active})
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        Completed ({tripCounts.completed})
+                      </SelectItem>
+                      <SelectItem value="cancelled">
+                        Cancelled ({tripCounts.cancelled})
+                      </SelectItem>
+                      {tripCounts.draft > 0 && (
+                        <SelectItem value="draft">
+                          Draft ({tripCounts.draft})
+                        </SelectItem>
+                      )}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Reset Filter Button */}
@@ -1023,25 +1169,32 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
             </div>
 
             {/* Right: Quick Sort & Selection Utilities */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Sort By Dropdown */}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-mute font-medium">Sort by:</span>
-                <select
-                  aria-label="Sort trips by column"
+                <Select
                   value={tripSortField}
-                  onChange={(e) =>
-                    setTripSortField(e.target.value as TripSortField)
+                  onValueChange={(val) =>
+                    setTripSortField((val ?? "date") as TripSortField)
                   }
-                  className="px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-wise-green cursor-pointer"
                 >
-                  <option value="date">Delivery Date</option>
-                  <option value="id">Trip ID</option>
-                  <option value="traveler">Traveler</option>
-                  <option value="route">Route</option>
-                  <option value="baggage">Baggage / Weight</option>
-                  <option value="status">Status</option>
-                </select>
+                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Sort by</SelectLabel>
+                      <SelectItem value="date">Travel Dates</SelectItem>
+                      <SelectItem value="title">Trip Title</SelectItem>
+                      <SelectItem value="id">Trip ID</SelectItem>
+                      <SelectItem value="traveler">Traveler / Seller</SelectItem>
+                      <SelectItem value="destination">Destination</SelectItem>
+                      <SelectItem value="slots">Request Slots</SelectItem>
+                      <SelectItem value="status">Status</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
 
                 {/* Ascending / Descending Toggle Button */}
                 <button
@@ -1049,48 +1202,62 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                   onClick={() =>
                     setTripSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
                   }
-                  className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-1 h-9 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                   title={`Current order: ${tripSortOrder === "asc" ? "Ascending" : "Descending"
                     }. Click to toggle.`}
                 >
                   {tripSortOrder === "asc" ? (
                     <>
                       <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
-                      <span>Ascending</span>
+                      <span>Asc</span>
                     </>
                   ) : (
                     <>
                       <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
-                      <span>Descending</span>
+                      <span>Desc</span>
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Quick Select by Status Utility */}
-              <div className="flex items-center gap-1 border-l border-zinc-200 dark:border-zinc-700 pl-2">
+              {/* Quick Select by Status Dropdown */}
+              <div className="flex items-center gap-1.5 border-l border-zinc-200 dark:border-zinc-700 pl-2">
                 <span className="text-xs text-mute font-medium">Select:</span>
-                <button
-                  type="button"
-                  onClick={() => handleSelectTripByStatus("active")}
-                  className="px-2 py-1 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:hover:bg-blue-900/50 rounded-md font-medium transition-colors cursor-pointer"
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    if (val === "all") handleSelectAllTrips();
+                    else if (val === "active")
+                      handleSelectTripByStatus("active");
+                    else if (val === "upcoming")
+                      handleSelectTripByStatus("upcoming");
+                    else if (val === "completed")
+                      handleSelectTripByStatus("completed");
+                    else if (val === "clear") setSelectedTripIds([]);
+                  }}
                 >
-                  Active
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectTripByStatus("upcoming")}
-                  className="px-2 py-1 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-900/50 rounded-md font-medium transition-colors cursor-pointer"
-                >
-                  Upcoming
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectTripByStatus("completed")}
-                  className="px-2 py-1 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/50 rounded-md font-medium transition-colors cursor-pointer"
-                >
-                  Completed
-                </button>
+                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="Quick select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Quick select...</SelectLabel>
+                      <SelectItem value="all">
+                        Select All ({filteredTrips.length})
+                      </SelectItem>
+                      <SelectItem value="upcoming">
+                        Select Upcoming ({tripCounts.upcoming})
+                      </SelectItem>
+                      <SelectItem value="active">
+                        Select Active ({tripCounts.active})
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        Select Completed ({tripCounts.completed})
+                      </SelectItem>
+                      <SelectItem value="clear">Clear Selection</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -1134,94 +1301,53 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
         <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 dark:bg-zinc-900 dark:border-zinc-800 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Left: Filter Controls */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 mr-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>Filters:</span>
               </div>
 
-              {/* Order Status Filter Buttons */}
-              <div className="flex flex-wrap items-center gap-1 bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setRequestStatusFilter("all")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${requestStatusFilter === "all"
-                      ? "bg-white text-zinc-900 shadow-xs font-semibold dark:bg-zinc-700 dark:text-white"
-                      : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
-                    }`}
-                >
-                  All ({DUMMY_REQUESTS.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRequestStatusFilter("pending")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${requestStatusFilter === "pending"
-                      ? "bg-amber-500 text-white shadow-xs font-semibold"
-                      : "text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
-                    }`}
-                >
-                  Pending ({requestCounts.pending})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRequestStatusFilter("accepted")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${requestStatusFilter === "accepted"
-                      ? "bg-blue-600 text-white shadow-xs font-semibold"
-                      : "text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                    }`}
-                >
-                  Accepted ({requestCounts.accepted})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRequestStatusFilter("purchased")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${requestStatusFilter === "purchased"
-                      ? "bg-purple-600 text-white shadow-xs font-semibold"
-                      : "text-purple-700 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
-                    }`}
-                >
-                  Purchased ({requestCounts.purchased})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRequestStatusFilter("delivered")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${requestStatusFilter === "delivered"
-                      ? "bg-emerald-600 text-white shadow-xs font-semibold"
-                      : "text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
-                    }`}
-                >
-                  Delivered ({requestCounts.delivered})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRequestStatusFilter("cancelled")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${requestStatusFilter === "cancelled"
-                      ? "bg-zinc-600 text-white shadow-xs font-semibold dark:bg-zinc-600"
-                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
-                    }`}
-                >
-                  Cancelled ({requestCounts.cancelled})
-                </button>
-              </div>
-
-              {/* Escrow Filter Dropdown */}
-              <div className="relative">
-                <select
-                  aria-label="Filter by Escrow Status"
-                  value={requestEscrowFilter}
-                  onChange={(e) =>
-                    setRequestEscrowFilter(
-                      e.target.value as RequestEscrowFilter,
+              {/* Order Status Filter Dropdown */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-mute font-medium">Status:</span>
+                <Select
+                  value={requestStatusFilter}
+                  onValueChange={(val) =>
+                    setRequestStatusFilter(
+                      (val ?? "all") as RequestStatusFilter,
                     )
                   }
-                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-wise-green cursor-pointer"
                 >
-                  <option value="all">All Escrow Status</option>
-                  <option value="held">Held in Escrow</option>
-                  <option value="released">Released to Traveler</option>
-                  <option value="awaiting">Awaiting Payment</option>
-                  <option value="refunded">Refunded to Buyer</option>
-                </select>
+                  <SelectTrigger className="h-9 min-w-[145px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Request Status</SelectLabel>
+                      <SelectItem value="all">
+                        All Status ({requestsList.length})
+                      </SelectItem>
+                      <SelectItem value="pending">
+                        Pending ({requestCounts.pending})
+                      </SelectItem>
+                      <SelectItem value="accepted">
+                        Accepted ({requestCounts.accepted})
+                      </SelectItem>
+                      <SelectItem value="purchased">
+                        Purchased ({requestCounts.purchased})
+                      </SelectItem>
+                      <SelectItem value="delivered">
+                        Delivered ({requestCounts.delivered})
+                      </SelectItem>
+                      <SelectItem value="rejected">
+                        Rejected ({requestCounts.rejected})
+                      </SelectItem>
+                      <SelectItem value="cancelled">
+                        Cancelled ({requestCounts.cancelled})
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Reset Filter Button */}
@@ -1239,26 +1365,33 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
             </div>
 
             {/* Right: Quick Sort & Selection Utilities */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Sort By Dropdown */}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-mute font-medium">Sort by:</span>
-                <select
-                  aria-label="Sort requests by column"
+                <Select
                   value={requestSortField}
-                  onChange={(e) =>
-                    setRequestSortField(e.target.value as RequestSortField)
+                  onValueChange={(val) =>
+                    setRequestSortField((val ?? "item") as RequestSortField)
                   }
-                  className="px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-wise-green cursor-pointer"
                 >
-                  <option value="id">Request ID</option>
-                  <option value="buyer">Buyer</option>
-                  <option value="item">Requested Item</option>
-                  <option value="price">Budget (Price)</option>
-                  <option value="traveler">Assigned Traveler</option>
-                  <option value="escrow">Escrow Status</option>
-                  <option value="status">Order Status</option>
-                </select>
+                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Sort by</SelectLabel>
+                      <SelectItem value="item">Requested Item</SelectItem>
+                      <SelectItem value="id">Request ID</SelectItem>
+                      <SelectItem value="buyer">Buyer</SelectItem>
+                      <SelectItem value="price">Total Price</SelectItem>
+                      <SelectItem value="traveler">Assigned Traveler</SelectItem>
+                      <SelectItem value="quantity">Quantity</SelectItem>
+                      <SelectItem value="date">Date Created</SelectItem>
+                      <SelectItem value="status">Order Status</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
 
                 {/* Ascending / Descending Toggle Button */}
                 <button
@@ -1268,48 +1401,67 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                       prev === "asc" ? "desc" : "asc",
                     )
                   }
-                  className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-1 h-9 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                   title={`Current order: ${requestSortOrder === "asc" ? "Ascending" : "Descending"
                     }. Click to toggle.`}
                 >
                   {requestSortOrder === "asc" ? (
                     <>
                       <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
-                      <span>Ascending</span>
+                      <span>Asc</span>
                     </>
                   ) : (
                     <>
                       <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
-                      <span>Descending</span>
+                      <span>Desc</span>
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Quick Select by Status Utility */}
-              <div className="flex items-center gap-1 border-l border-zinc-200 dark:border-zinc-700 pl-2">
+              {/* Quick Select by Status Dropdown */}
+              <div className="flex items-center gap-1.5 border-l border-zinc-200 dark:border-zinc-700 pl-2">
                 <span className="text-xs text-mute font-medium">Select:</span>
-                <button
-                  type="button"
-                  onClick={() => handleSelectRequestByStatus("pending")}
-                  className="px-2 py-1 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-900/50 rounded-md font-medium transition-colors cursor-pointer"
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    if (val === "all") handleSelectAllRequests();
+                    else if (val === "pending")
+                      handleSelectRequestByStatus("pending");
+                    else if (val === "accepted")
+                      handleSelectRequestByStatus("accepted");
+                    else if (val === "purchased")
+                      handleSelectRequestByStatus("purchased");
+                    else if (val === "delivered")
+                      handleSelectRequestByStatus("delivered");
+                    else if (val === "clear") setSelectedRequestIds([]);
+                  }}
                 >
-                  Pending
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectRequestByStatus("accepted")}
-                  className="px-2 py-1 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:hover:bg-blue-900/50 rounded-md font-medium transition-colors cursor-pointer"
-                >
-                  Accepted
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectRequestByStatus("delivered")}
-                  className="px-2 py-1 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/50 rounded-md font-medium transition-colors cursor-pointer"
-                >
-                  Delivered
-                </button>
+                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                    <SelectValue placeholder="Quick select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Quick select</SelectLabel>
+                      <SelectItem value="all">
+                        Select All ({filteredRequests.length})
+                      </SelectItem>
+                      <SelectItem value="pending">
+                        Select Pending ({requestCounts.pending})
+                      </SelectItem>
+                      <SelectItem value="accepted">
+                        Select Accepted ({requestCounts.accepted})
+                      </SelectItem>
+                      <SelectItem value="purchased">
+                        Select Purchased ({requestCounts.purchased})
+                      </SelectItem>
+                      <SelectItem value="delivered">
+                        Select Delivered ({requestCounts.delivered})
+                      </SelectItem>
+                      <SelectItem value="clear">Clear Selection</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -1464,8 +1616,8 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                       <tr
                         key={profile.id}
                         className={`transition-colors ${isSelected
-                            ? "bg-emerald-50/50 dark:bg-emerald-950/20"
-                            : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                          ? "bg-emerald-50/50 dark:bg-emerald-950/20"
+                          : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
                           }`}
                       >
                         <td className="w-12 px-4 py-4 text-center">
@@ -1506,10 +1658,10 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${profile.role === "admin"
-                                ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50"
-                                : profile.role === "seller"
-                                  ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
-                                  : "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
+                              ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50"
+                              : profile.role === "seller"
+                                ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
+                                : "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
                               }`}
                           >
                             {profile.role}
@@ -1518,8 +1670,8 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${profile.is_active
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
-                                : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
+                              : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
                               }`}
                           >
                             {profile.is_active ? "Active" : "Inactive"}
@@ -1561,12 +1713,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     </button>
                   </th>
                   <th
-                    onClick={() => handleSortTrip("id")}
+                    onClick={() => handleSortTrip("title")}
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Trip ID</span>
-                      {tripSortField === "id" ? (
+                      <span>Trip Details</span>
+                      {tripSortField === "title" ? (
                         tripSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
                         ) : (
@@ -1582,7 +1734,7 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Traveler</span>
+                      <span>Traveler / Seller</span>
                       {tripSortField === "traveler" ? (
                         tripSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
@@ -1595,12 +1747,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     </div>
                   </th>
                   <th
-                    onClick={() => handleSortTrip("route")}
+                    onClick={() => handleSortTrip("destination")}
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Itinerary / Route</span>
-                      {tripSortField === "route" ? (
+                      <span>Destination</span>
+                      {tripSortField === "destination" ? (
                         tripSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
                         ) : (
@@ -1612,12 +1764,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     </div>
                   </th>
                   <th
-                    onClick={() => handleSortTrip("baggage")}
+                    onClick={() => handleSortTrip("slots")}
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Baggage / Weight</span>
-                      {tripSortField === "baggage" ? (
+                      <span>Max Slots</span>
+                      {tripSortField === "slots" ? (
                         tripSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
                         ) : (
@@ -1633,7 +1785,7 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Delivery Date</span>
+                      <span>Travel Period</span>
                       {tripSortField === "date" ? (
                         tripSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
@@ -1671,7 +1823,7 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                       colSpan={7}
                       className="px-6 py-12 text-center text-mute"
                     >
-                      No matching trips found.
+                      No matching trips found in the database.
                     </td>
                   </tr>
                 ) : (
@@ -1681,8 +1833,8 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                       <tr
                         key={trip.id}
                         className={`transition-colors ${isSelected
-                            ? "bg-emerald-50/50 dark:bg-emerald-950/20"
-                            : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                          ? "bg-emerald-50/50 dark:bg-emerald-950/20"
+                          : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
                           }`}
                       >
                         <td className="w-12 px-4 py-4 text-center">
@@ -1699,33 +1851,73 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                             )}
                           </button>
                         </td>
-                        <td className="px-6 py-4 font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                          {trip.id}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
-                          {trip.traveler}
-                        </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-1.5 text-zinc-900 dark:text-zinc-100 font-medium">
-                            <span>{trip.from}</span>
-                            <ArrowRight className="h-3 w-3 text-mute" />
-                            <span>{trip.to}</span>
+                          <div>
+                            <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+                              {trip.title || "Untitled Trip"}
+                            </div>
+                            <div
+                              className="text-xs font-mono text-zinc-400 dark:text-zinc-500 mt-0.5 truncate max-w-[200px]"
+                              title={trip.id}
+                            >
+                              {trip.id}
+                            </div>
+                            {trip.notes && (
+                              <div
+                                className="text-[11px] text-zinc-500 dark:text-zinc-400 italic mt-0.5 line-clamp-1 max-w-xs"
+                                title={trip.notes}
+                              >
+                                {trip.notes}
+                              </div>
+                            )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 text-xs">
-                          {trip.baggage}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-canvas-soft text-ink font-bold border border-canvas-soft flex items-center justify-center dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 text-xs">
+                              {(
+                                trip.seller?.full_name ||
+                                trip.seller?.email ||
+                                "S"
+                              )[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">
+                                {trip.seller?.full_name || "Unknown Seller"}
+                              </div>
+                              <div className="text-[11px] text-mute">
+                                {trip.seller?.email ||
+                                  (trip.seller_id
+                                    ? `${trip.seller_id.slice(0, 8)}...`
+                                    : "No email")}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
+                          {trip.destination_city
+                            ? `${trip.destination_city}, ${trip.destination_country}`
+                            : trip.destination_country}
+                        </td>
+                        <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 text-xs font-medium">
+                          {trip.max_request_slots !== null &&
+                            trip.max_request_slots !== undefined
+                            ? `${trip.max_request_slots} slots`
+                            : "-"}
                         </td>
                         <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 text-xs">
-                          {trip.date}
+                          {formatTripDateRange(trip.start_date, trip.end_date)}
                         </td>
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${trip.status === "completed"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
-                                : trip.status === "active"
-                                  ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
-                                  : trip.status === "upcoming"
-                                    ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
+                              : trip.status === "active"
+                                ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
+                                : trip.status === "upcoming"
+                                  ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
+                                  : trip.status === "cancelled"
+                                    ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50"
                                     : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
                               }`}
                           >
@@ -1768,12 +1960,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     </button>
                   </th>
                   <th
-                    onClick={() => handleSortRequest("id")}
+                    onClick={() => handleSortRequest("item")}
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Request ID</span>
-                      {requestSortField === "id" ? (
+                      <span>Requested Item</span>
+                      {requestSortField === "item" ? (
                         requestSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
                         ) : (
@@ -1802,12 +1994,29 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     </div>
                   </th>
                   <th
-                    onClick={() => handleSortRequest("item")}
+                    onClick={() => handleSortRequest("traveler")}
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Requested Item</span>
-                      {requestSortField === "item" ? (
+                      <span>Trip / Traveler</span>
+                      {requestSortField === "traveler" ? (
+                        requestSortOrder === "asc" ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleSortRequest("quantity")}
+                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Qty</span>
+                      {requestSortField === "quantity" ? (
                         requestSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
                         ) : (
@@ -1823,7 +2032,7 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Budget</span>
+                      <span>Price / Budget</span>
                       {requestSortField === "price" ? (
                         requestSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
@@ -1836,29 +2045,12 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     </div>
                   </th>
                   <th
-                    onClick={() => handleSortRequest("traveler")}
+                    onClick={() => handleSortRequest("date")}
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Assigned Traveler</span>
-                      {requestSortField === "traveler" ? (
-                        requestSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
-                        ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    onClick={() => handleSortRequest("escrow")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Escrow Status</span>
-                      {requestSortField === "escrow" ? (
+                      <span>Date</span>
+                      {requestSortField === "date" ? (
                         requestSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
                         ) : (
@@ -1874,7 +2066,7 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                     className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Order Status</span>
+                      <span>Status</span>
                       {requestSortField === "status" ? (
                         requestSortOrder === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
@@ -1905,8 +2097,8 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                       <tr
                         key={req.id}
                         className={`transition-colors ${isSelected
-                            ? "bg-emerald-50/50 dark:bg-emerald-950/20"
-                            : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                          ? "bg-emerald-50/50 dark:bg-emerald-950/20"
+                          : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
                           }`}
                       >
                         <td className="w-12 px-4 py-4 text-center">
@@ -1923,54 +2115,103 @@ export function AdminDashboard({ initialProfiles }: AdminDashboardProps) {
                             )}
                           </button>
                         </td>
-                        <td className="px-6 py-4 font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                          {req.id}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
-                          {req.buyer}
-                        </td>
-                        <td className="px-6 py-4 max-w-xs truncate text-zinc-950 dark:text-zinc-100 font-medium">
-                          {req.item}
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-emerald-700 dark:text-wise-green">
-                          {req.price}
-                        </td>
-                        <td className="px-6 py-4 text-xs text-zinc-600 dark:text-zinc-400">
-                          {req.traveler === "None" ? (
-                            <span className="text-mute font-normal italic">
-                              Unassigned
-                            </span>
-                          ) : (
-                            <span>{req.traveler}</span>
-                          )}
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+                              {req.item_name || "Unnamed Item"}
+                            </div>
+                            <div
+                              className="text-xs font-mono text-zinc-400 dark:text-zinc-500 mt-0.5 truncate max-w-[200px]"
+                              title={req.id}
+                            >
+                              {req.id}
+                            </div>
+                            {req.description && (
+                              <div
+                                className="text-[11px] text-zinc-500 dark:text-zinc-400 italic mt-0.5 line-clamp-1 max-w-xs"
+                                title={req.description}
+                              >
+                                {req.description}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${req.escrow.includes("Held")
-                                  ? "bg-amber-500 animate-pulse"
-                                  : req.escrow.includes("Released")
-                                    ? "bg-emerald-500"
-                                    : req.escrow.includes("Refunded")
-                                      ? "bg-red-500"
-                                      : "bg-zinc-400"
-                                }`}
-                            />
-                            <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                              {req.escrow}
-                            </span>
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-canvas-soft text-ink font-bold border border-canvas-soft flex items-center justify-center dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 text-xs">
+                              {(
+                                req.buyer?.full_name ||
+                                req.buyer?.email ||
+                                "B"
+                              )[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">
+                                {req.buyer?.full_name || "Unknown Buyer"}
+                              </div>
+                              <div className="text-[11px] text-mute">
+                                {req.buyer?.email ||
+                                  (req.buyer_id
+                                    ? `${req.buyer_id.slice(0, 8)}...`
+                                    : "No email")}
+                              </div>
+                            </div>
                           </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">
+                            {req.trip?.destination_city
+                              ? `${req.trip.destination_city}, ${req.trip.destination_country}`
+                              : req.trip?.destination_country ||
+                              req.trip?.title ||
+                              "No trip assigned"}
+                          </div>
+                          <div className="text-[11px] text-mute">
+                            {req.trip?.seller?.full_name
+                              ? `Traveler: ${req.trip.seller.full_name}`
+                              : req.trip?.seller?.email
+                                ? `Traveler: ${req.trip.seller.email}`
+                                : "Unassigned traveler"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                          {req.quantity || 1}x
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-emerald-700 dark:text-wise-green text-sm">
+                            {formatCurrency(
+                              req.total_price ||
+                              req.agreed_price ||
+                              req.estimated_price,
+                              req.currency,
+                            )}
+                          </div>
+                          <div className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                            {req.agreed_price != null
+                              ? "Agreed Price"
+                              : req.total_price != null
+                                ? "Total Price"
+                                : req.estimated_price != null
+                                  ? "Estimated"
+                                  : "-"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-xs text-zinc-600 dark:text-zinc-400">
+                          {formatTripDate(req.created_at)}
                         </td>
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${req.status === "delivered"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
-                                : req.status === "purchased" ||
-                                  req.status === "accepted"
+                                : req.status === "purchased"
                                   ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
-                                  : req.status === "pending"
-                                    ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
-                                    : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                                  : req.status === "accepted"
+                                    ? "bg-cyan-50 text-cyan-700 border-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-400 dark:border-cyan-900/50"
+                                    : req.status === "pending"
+                                      ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
+                                      : req.status === "rejected"
+                                        ? "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50"
+                                        : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
                               }`}
                           >
                             {req.status}

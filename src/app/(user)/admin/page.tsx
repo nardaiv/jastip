@@ -3,7 +3,33 @@ import { AdminDashboard } from "@/components/AdminDashboard";
 
 export default async function AdminPage() {
   const supabase = await createClient();
-  const { data: profiles } = await supabase.from("profiles").select("*");
+  const [{ data: profiles }, { data: trips }, { data: itemRequests }] =
+    await Promise.all([
+      supabase.from("profiles").select("*"),
+      supabase
+        .from("trips")
+        .select("*, seller:profiles(id, full_name, email)"),
+      supabase
+        .from("item_requests")
+        .select(
+          "*, buyer:profiles(id, full_name, email), trip:trips(id, title, destination_country, destination_city, seller_id, seller:profiles(id, full_name, email))",
+        ),
+    ]);
+
+  // Fallback if joined queries failed or returned no relations
+  let safeTrips = trips;
+  if (!safeTrips) {
+    const { data: fallbackTrips } = await supabase.from("trips").select("*");
+    safeTrips = fallbackTrips;
+  }
+
+  let safeRequests = itemRequests;
+  if (!safeRequests) {
+    const { data: fallbackRequests } = await supabase
+      .from("item_requests")
+      .select("*");
+    safeRequests = fallbackRequests;
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -17,7 +43,11 @@ export default async function AdminPage() {
 
         <div className="h-px bg-zinc-200/85 dark:bg-zinc-800" />
 
-        <AdminDashboard initialProfiles={profiles} />
+        <AdminDashboard
+          initialProfiles={profiles}
+          initialTrips={safeTrips}
+          initialItemRequests={safeRequests}
+        />
       </div>
     </div>
   );

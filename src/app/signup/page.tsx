@@ -70,7 +70,12 @@ export default async function SignupPage({
 
           <form action={signup} className="space-y-4">
             <div className="space-y-1.5 flex flex-col">
-              <label htmlFor="signup-fullname" className="text-body-sm-strong text-ink dark:text-zinc-300">Full Name</label>
+              <label
+                htmlFor="signup-fullname"
+                className="text-body-sm-strong text-ink dark:text-zinc-300"
+              >
+                Full Name
+              </label>
               <input
                 id="signup-fullname"
                 name="full_name"
@@ -82,20 +87,30 @@ export default async function SignupPage({
             </div>
 
             <div className="space-y-1.5 flex flex-col">
-              <label htmlFor="signup-role" className="text-body-sm-strong text-ink dark:text-zinc-300">Register As</label>
+              <label
+                htmlFor="signup-role"
+                className="text-body-sm-strong text-ink dark:text-zinc-300"
+              >
+                Register As
+              </label>
               <select
                 id="signup-role"
                 name="role"
                 defaultValue="buyer"
                 className="bg-canvas border border-ink rounded-md px-4 py-2.5 text-body-md text-ink outline-none focus:ring-2 focus:ring-primary/40 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200 appearance-none cursor-pointer"
               >
-                <option value="buyer">Buyer (Jastip Customer)</option>
-                <option value="seller">Seller (Traveler / Jastiper)</option>
+                <option value="buyer">Buyer</option>
+                <option value="seller">Seller</option>
               </select>
             </div>
 
             <div className="space-y-1.5 flex flex-col">
-              <label htmlFor="signup-email" className="text-body-sm-strong text-ink dark:text-zinc-300">Email Address</label>
+              <label
+                htmlFor="signup-email"
+                className="text-body-sm-strong text-ink dark:text-zinc-300"
+              >
+                Email Address
+              </label>
               <input
                 id="signup-email"
                 name="email"
@@ -107,18 +122,26 @@ export default async function SignupPage({
             </div>
 
             <div className="space-y-1.5 flex flex-col">
-              <label htmlFor="signup-password" className="text-body-sm-strong text-ink dark:text-zinc-300">Password</label>
+              <label
+                htmlFor="signup-password"
+                className="text-body-sm-strong text-ink dark:text-zinc-300"
+              >
+                Password
+              </label>
               <input
                 id="signup-password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter Your Password"
                 required
                 className="bg-canvas border border-ink rounded-md px-4 py-2.5 text-body-md text-ink outline-none focus:ring-2 focus:ring-primary/40 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
               />
             </div>
 
-            <button type="submit" className="button-primary w-full h-12 text-sm font-semibold mt-2">
+            <button
+              type="submit"
+              className="button-primary w-full h-12 text-sm font-semibold mt-2"
+            >
               Sign Up
             </button>
           </form>
