@@ -12,11 +12,14 @@ export const TripStatusSchema = z.enum([
 ]);
 export type TripStatus = z.infer<typeof TripStatusSchema>;
 
+// Tambahkan "paid" dan "shipped" di sini
 export const RequestStatusSchema = z.enum([
   "pending",
   "accepted",
   "rejected",
   "purchased",
+  "paid",       // Ditambahkan: Menandakan Admin sudah konfirmasi pembayaran
+  "shipped",    // Ditambahkan: Menandakan Seller sudah menekan tombol Kirim
   "delivered",
   "cancelled",
 ]);
@@ -49,3 +52,159 @@ export const SignupSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 export type SignupInput = z.infer<typeof SignupSchema>;
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          full_name: string;
+          email: string;
+          phone_number: string | null;
+          role: "admin" | "seller" | "buyer";
+          avatar_url: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          full_name: string;
+          email: string;
+          phone_number?: string | null;
+          role?: "admin" | "seller" | "buyer";
+          avatar_url?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          full_name?: string;
+          email?: string;
+          phone_number?: string | null;
+          role?: "admin" | "seller" | "buyer";
+          avatar_url?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      trips: {
+        Row: {
+          id: string;
+          seller_id: string;
+          title: string;
+          destination_country: string;
+          destination_city: string;
+          start_date: string;
+          end_date: string;
+          max_request_slots: number | null;
+          notes: string | null;
+          status: "draft" | "upcoming" | "active" | "completed" | "cancelled";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          seller_id: string;
+          title: string;
+          destination_country: string;
+          destination_city: string;
+          start_date: string;
+          end_date: string;
+          max_request_slots?: number | null;
+          notes?: string | null;
+          status?: "draft" | "upcoming" | "active" | "completed" | "cancelled";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          seller_id?: string;
+          title?: string;
+          destination_country?: string;
+          destination_city?: string;
+          start_date?: string;
+          end_date?: string;
+          max_request_slots?: number | null;
+          notes?: string | null;
+          status?: "draft" | "upcoming" | "active" | "completed" | "cancelled";
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      item_requests: {
+        Row: {
+          id: string;
+          trip_id: string;
+          buyer_id: string;
+          item_name: string;
+          description: string | null;
+          quantity: number;
+          estimated_price: number | null;
+          currency: string | null;
+          agreed_price: number | null;
+          jastip_fee: number | null;
+          shipping_fee: number | null;
+          total_price: number | null;
+          reference_link: string | null;
+          image_url: string | null;
+          status: "pending" | "accepted" | "rejected" | "purchased" | "paid" | "shipped" | "delivered" | "cancelled";
+          rejection_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          trip_id: string;
+          buyer_id: string;
+          item_name: string;
+          description?: string | null;
+          quantity?: number;
+          estimated_price?: number | null;
+          currency?: string | null;
+          agreed_price?: number | null;
+          jastip_fee?: number | null;
+          shipping_fee?: number | null;
+          total_price?: number | null;
+          reference_link?: string | null;
+          image_url?: string | null;
+          status?: "pending" | "accepted" | "rejected" | "purchased" | "paid" | "shipped" | "delivered" | "cancelled";
+          rejection_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          trip_id?: string;
+          buyer_id?: string;
+          item_name?: string;
+          description?: string | null;
+          quantity?: number;
+          estimated_price?: number | null;
+          currency?: string | null;
+          agreed_price?: number | null;
+          jastip_fee?: number | null;
+          shipping_fee?: number | null;
+          total_price?: number | null;
+          reference_link?: string | null;
+          image_url?: string | null;
+          status?: "pending" | "accepted" | "rejected" | "purchased" | "paid" | "shipped" | "delivered" | "cancelled";
+          rejection_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+    };
+  };
+}
