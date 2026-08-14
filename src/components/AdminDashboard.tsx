@@ -764,12 +764,12 @@ export function AdminDashboard({
       {/* Top statistics summary panel */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* Users Stats Card */}
-        <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-zinc-900 dark:border-zinc-800/80">
+        <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-card dark:border-border/30">
           <div className="space-y-1">
             <span className="text-caption font-semibold text-mute uppercase tracking-wider">
               Total Members
             </span>
-            <p className="text-display-xs font-black text-ink dark:text-zinc-50">
+            <p className="text-display-xs font-black text-foreground">
               {stats.users}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-positive font-bold">
@@ -777,18 +777,18 @@ export function AdminDashboard({
               <span>+12% vs last month</span>
             </div>
           </div>
-          <div className="p-3 bg-canvas-soft text-ink rounded-xl dark:bg-zinc-800 dark:text-zinc-300">
+          <div className="p-3 bg-canvas-soft text-foreground rounded-xl dark:bg-muted dark:text-foreground/80">
             <Users className="h-6 w-6" />
           </div>
         </div>
 
         {/* Trips Stats Card */}
-        <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-zinc-900 dark:border-zinc-800/80">
+        <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-card dark:border-border/30">
           <div className="space-y-1">
             <span className="text-caption font-semibold text-mute uppercase tracking-wider">
               Active Itineraries
             </span>
-            <p className="text-display-xs font-black text-ink dark:text-zinc-50">
+            <p className="text-display-xs font-black text-foreground">
               {stats.trips}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-positive font-bold">
@@ -796,43 +796,43 @@ export function AdminDashboard({
               <span>+3 new departures today</span>
             </div>
           </div>
-          <div className="p-3 bg-canvas-soft text-ink rounded-xl dark:bg-zinc-800 dark:text-zinc-300">
+          <div className="p-3 bg-canvas-soft text-foreground rounded-xl dark:bg-muted dark:text-foreground/80">
             <Plane className="h-6 w-6" />
           </div>
         </div>
 
         {/* Requests Stats Card */}
-        <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-zinc-900 dark:border-zinc-800/80">
+        <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-card dark:border-border/30">
           <div className="space-y-1">
             <span className="text-caption font-semibold text-mute uppercase tracking-wider">
               Open Orders
             </span>
-            <p className="text-display-xs font-black text-ink dark:text-zinc-50">
+            <p className="text-display-xs font-black text-foreground">
               {stats.requests}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-zinc-500">
               <span>96% fulfillment rate</span>
             </div>
           </div>
-          <div className="p-3 bg-canvas-soft text-ink rounded-xl dark:bg-zinc-800 dark:text-zinc-300">
+          <div className="p-3 bg-canvas-soft text-foreground rounded-xl dark:bg-muted dark:text-foreground/80">
             <ShoppingBag className="h-6 w-6" />
           </div>
         </div>
 
         {/* Escrow Balance Card */}
-        <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-zinc-900 dark:border-zinc-800/80">
+        <div className="card-content flex items-center justify-between p-6 border border-canvas-soft/85 hover:border-wise-green transition-all dark:bg-card dark:border-border/30">
           <div className="space-y-1">
             <span className="text-caption font-semibold text-mute uppercase tracking-wider">
               Escrow Balance
             </span>
-            <p className="text-display-xs font-black text-ink dark:text-zinc-50">
+            <p className="text-display-xs font-black text-foreground">
               {stats.escrow}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-positive font-bold">
               <span>Secured by Smart Trust</span>
             </div>
           </div>
-          <div className="p-3 bg-wise-green-pale text-positive-deep rounded-xl dark:bg-emerald-950/40 dark:text-emerald-400">
+          <div className="p-3 bg-wise-green-pale text-positive-deep rounded-xl dark:bg-wise-green/10 dark:text-wise-green">
             <ShieldCheck className="h-6 w-6" />
           </div>
         </div>
@@ -841,15 +841,15 @@ export function AdminDashboard({
       {/* Main Section Header with Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4">
         {/* Navigation Tabs */}
-        <div className="flex bg-canvas-soft p-1 rounded-xl w-fit dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800">
+        <div className="flex bg-canvas-soft p-1 rounded-xl w-fit dark:bg-muted border border-border/10 dark:border-border/30">
           <button
             onClick={() => {
               setActiveTab("users");
               setSearchQuery("");
             }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "users"
-              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-              : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-card shadow-xs text-foreground"
+              : "text-mute hover:text-foreground"
               }`}
           >
             <Users className="h-4 w-4" />
@@ -861,8 +861,8 @@ export function AdminDashboard({
               setSearchQuery("");
             }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "trips"
-              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-              : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-card shadow-xs text-foreground"
+              : "text-mute hover:text-foreground"
               }`}
           >
             <Plane className="h-4 w-4" />
@@ -874,8 +874,8 @@ export function AdminDashboard({
               setSearchQuery("");
             }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === "requests"
-              ? "bg-white shadow-xs text-ink dark:bg-zinc-800 dark:text-white"
-              : "text-mute hover:text-ink dark:hover:text-white"
+              ? "bg-card shadow-xs text-foreground"
+              : "text-mute hover:text-foreground"
               }`}
           >
             <ShoppingBag className="h-4 w-4" />
@@ -893,18 +893,18 @@ export function AdminDashboard({
             placeholder={`Search ${activeTab}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-zinc-200/80 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-wise-green dark:bg-zinc-900 dark:border-zinc-800 dark:text-white"
+            className="w-full pl-9 pr-4 py-2.5 bg-card border border-border/10 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-wise-green dark:border-border/30 text-foreground"
           />
         </div>
       </div>
 
       {/* Users Control & Filter Bar */}
       {activeTab === "users" && (
-        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 dark:bg-zinc-900 dark:border-zinc-800 space-y-3">
+        <div className="bg-card p-4 rounded-2xl border border-border/10 dark:border-border/30 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Left: Filter Controls */}
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 mr-1">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-mute mr-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>Filters:</span>
               </div>
@@ -918,7 +918,7 @@ export function AdminDashboard({
                     setUserStatusFilter((val ?? "all") as StatusFilter)
                   }
                 >
-                  <SelectTrigger className="h-9 min-w-[140px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[140px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -928,13 +928,13 @@ export function AdminDashboard({
                         All Status ({usersList.length})
                       </SelectItem>
                       <SelectItem value="active">
-                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                        <div className="flex items-center gap-1.5 text-positive dark:text-wise-green font-medium">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           <span>Active ({activeUsersCount})</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="inactive">
-                        <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 font-medium">
+                        <div className="flex items-center gap-1.5 text-mute font-medium">
                           <XCircle className="h-3.5 w-3.5" />
                           <span>Inactive ({inactiveUsersCount})</span>
                         </div>
@@ -953,7 +953,7 @@ export function AdminDashboard({
                     setUserRoleFilter((val ?? "all") as RoleFilter)
                   }
                 >
-                  <SelectTrigger className="h-9 min-w-[125px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[125px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="All Roles" />
                   </SelectTrigger>
                   <SelectContent>
@@ -993,7 +993,7 @@ export function AdminDashboard({
                     setUserSortField((val ?? "name") as UserSortField)
                   }
                 >
-                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1013,7 +1013,7 @@ export function AdminDashboard({
                   onClick={() =>
                     setUserSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
                   }
-                  className="flex items-center gap-1 h-9 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-1 h-9 px-3 bg-canvas-soft hover:bg-canvas-soft/80 dark:bg-muted dark:hover:bg-muted/80 text-foreground rounded-xl text-xs font-medium transition-colors cursor-pointer"
                   title={`Current order: ${userSortOrder === "asc" ? "Ascending" : "Descending"
                     }. Click to toggle.`}
                 >
@@ -1032,7 +1032,7 @@ export function AdminDashboard({
               </div>
 
               {/* Quick Select by Status Dropdown */}
-              <div className="flex items-center gap-1.5 border-l border-zinc-200 dark:border-zinc-700 pl-2">
+              <div className="flex items-center gap-1.5 border-l border-border/10 dark:border-border/30 pl-2">
                 <span className="text-xs text-mute font-medium">Select:</span>
                 <Select
                   value=""
@@ -1045,7 +1045,7 @@ export function AdminDashboard({
                     else if (val === "clear") setSelectedUserIds([]);
                   }}
                 >
-                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="Quick select..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -1071,9 +1071,9 @@ export function AdminDashboard({
 
           {/* Selection Banner if users are selected */}
           {selectedUserIds.length > 0 && (
-            <div className="flex items-center justify-between px-3 py-2 bg-emerald-50/80 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/60 rounded-xl text-xs">
-              <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-semibold">
-                <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center justify-between px-3 py-2 bg-wise-green-pale/40 border border-wise-green-neutral/30 dark:bg-emerald-950/30 dark:border-emerald-800/60 rounded-xl text-xs">
+              <div className="flex items-center gap-2 text-positive-deep dark:text-emerald-200 font-semibold">
+                <CheckSquare className="h-4 w-4 text-positive dark:text-wise-green" />
                 <span>
                   {selectedUserIds.length}{" "}
                   {selectedUserIds.length === 1 ? "user" : "users"} selected
@@ -1083,17 +1083,17 @@ export function AdminDashboard({
                 <button
                   type="button"
                   onClick={handleSelectAllUsers}
-                  className="text-emerald-800 dark:text-emerald-300 hover:underline cursor-pointer font-medium"
+                  className="text-positive-deep dark:text-wise-green hover:underline cursor-pointer font-medium"
                 >
                   {selectedUserIds.length === filteredUsers.length
                     ? "Deselect All"
                     : `Select All Filtered (${filteredUsers.length})`}
                 </button>
-                <span className="text-emerald-300 dark:text-emerald-700">•</span>
+                <span className="text-positive/30 dark:text-emerald-700">•</span>
                 <button
                   type="button"
                   onClick={() => setSelectedUserIds([])}
-                  className="text-red-600 dark:text-red-400 hover:underline cursor-pointer font-medium"
+                  className="text-negative dark:text-negative-deep hover:underline cursor-pointer font-medium"
                 >
                   Clear Selection
                 </button>
@@ -1105,11 +1105,11 @@ export function AdminDashboard({
 
       {/* Trips Control & Filter Bar */}
       {activeTab === "trips" && (
-        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 dark:bg-zinc-900 dark:border-zinc-800 space-y-3">
+        <div className="bg-card p-4 rounded-2xl border border-border/10 dark:border-border/30 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Left: Filter Controls */}
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 mr-1">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-mute mr-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>Filters:</span>
               </div>
@@ -1123,7 +1123,7 @@ export function AdminDashboard({
                     setTripStatusFilter((val ?? "all") as TripStatusFilter)
                   }
                 >
-                  <SelectTrigger className="h-9 min-w-[150px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[150px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1179,7 +1179,7 @@ export function AdminDashboard({
                     setTripSortField((val ?? "date") as TripSortField)
                   }
                 >
-                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1202,7 +1202,7 @@ export function AdminDashboard({
                   onClick={() =>
                     setTripSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
                   }
-                  className="flex items-center gap-1 h-9 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-1 h-9 px-3 bg-canvas-soft hover:bg-canvas-soft/80 dark:bg-muted dark:hover:bg-muted/80 text-foreground rounded-lg text-xs font-medium transition-colors cursor-pointer"
                   title={`Current order: ${tripSortOrder === "asc" ? "Ascending" : "Descending"
                     }. Click to toggle.`}
                 >
@@ -1221,7 +1221,7 @@ export function AdminDashboard({
               </div>
 
               {/* Quick Select by Status Dropdown */}
-              <div className="flex items-center gap-1.5 border-l border-zinc-200 dark:border-zinc-700 pl-2">
+              <div className="flex items-center gap-1.5 border-l border-border/10 dark:border-border/30 pl-2">
                 <span className="text-xs text-mute font-medium">Select:</span>
                 <Select
                   value=""
@@ -1236,7 +1236,7 @@ export function AdminDashboard({
                     else if (val === "clear") setSelectedTripIds([]);
                   }}
                 >
-                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="Quick select..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -1264,9 +1264,9 @@ export function AdminDashboard({
 
           {/* Selection Banner if trips are selected */}
           {selectedTripIds.length > 0 && (
-            <div className="flex items-center justify-between px-3 py-2 bg-emerald-50/80 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/60 rounded-xl text-xs">
-              <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-semibold">
-                <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center justify-between px-3 py-2 bg-wise-green-pale/40 border border-wise-green-neutral/30 dark:bg-emerald-950/30 dark:border-emerald-800/60 rounded-xl text-xs">
+              <div className="flex items-center gap-2 text-positive-deep dark:text-emerald-200 font-semibold">
+                <CheckSquare className="h-4 w-4 text-positive dark:text-wise-green" />
                 <span>
                   {selectedTripIds.length}{" "}
                   {selectedTripIds.length === 1 ? "trip" : "trips"} selected
@@ -1276,17 +1276,17 @@ export function AdminDashboard({
                 <button
                   type="button"
                   onClick={handleSelectAllTrips}
-                  className="text-emerald-800 dark:text-emerald-300 hover:underline cursor-pointer font-medium"
+                  className="text-positive-deep dark:text-wise-green hover:underline cursor-pointer font-medium"
                 >
                   {selectedTripIds.length === filteredTrips.length
                     ? "Deselect All"
                     : `Select All Filtered (${filteredTrips.length})`}
                 </button>
-                <span className="text-emerald-300 dark:text-emerald-700">•</span>
+                <span className="text-positive/30 dark:text-emerald-700">•</span>
                 <button
                   type="button"
                   onClick={() => setSelectedTripIds([])}
-                  className="text-red-600 dark:text-red-400 hover:underline cursor-pointer font-medium"
+                  className="text-negative dark:text-negative-deep hover:underline cursor-pointer font-medium"
                 >
                   Clear Selection
                 </button>
@@ -1298,11 +1298,11 @@ export function AdminDashboard({
 
       {/* Requests Control & Filter Bar */}
       {activeTab === "requests" && (
-        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 dark:bg-zinc-900 dark:border-zinc-800 space-y-3">
+        <div className="bg-card p-4 rounded-2xl border border-border/10 dark:border-border/30 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Left: Filter Controls */}
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 mr-1">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-mute mr-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>Filters:</span>
               </div>
@@ -1318,7 +1318,7 @@ export function AdminDashboard({
                     )
                   }
                 >
-                  <SelectTrigger className="h-9 min-w-[145px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[145px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1375,7 +1375,7 @@ export function AdminDashboard({
                     setRequestSortField((val ?? "item") as RequestSortField)
                   }
                 >
-                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[160px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1401,7 +1401,7 @@ export function AdminDashboard({
                       prev === "asc" ? "desc" : "asc",
                     )
                   }
-                  className="flex items-center gap-1 h-9 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-1 h-9 px-3 bg-canvas-soft hover:bg-canvas-soft/80 dark:bg-muted dark:hover:bg-muted/80 text-foreground rounded-lg text-xs font-medium transition-colors cursor-pointer"
                   title={`Current order: ${requestSortOrder === "asc" ? "Ascending" : "Descending"
                     }. Click to toggle.`}
                 >
@@ -1420,7 +1420,7 @@ export function AdminDashboard({
               </div>
 
               {/* Quick Select by Status Dropdown */}
-              <div className="flex items-center gap-1.5 border-l border-zinc-200 dark:border-zinc-700 pl-2">
+              <div className="flex items-center gap-1.5 border-l border-border/10 dark:border-border/30 pl-2">
                 <span className="text-xs text-mute font-medium">Select:</span>
                 <Select
                   value=""
@@ -1437,7 +1437,7 @@ export function AdminDashboard({
                     else if (val === "clear") setSelectedRequestIds([]);
                   }}
                 >
-                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-zinc-100 dark:bg-zinc-800 border-none rounded-xl">
+                  <SelectTrigger className="h-9 min-w-[130px] text-xs bg-canvas-soft text-foreground dark:bg-muted border-none rounded-xl">
                     <SelectValue placeholder="Quick select..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -1468,9 +1468,9 @@ export function AdminDashboard({
 
           {/* Selection Banner if requests are selected */}
           {selectedRequestIds.length > 0 && (
-            <div className="flex items-center justify-between px-3 py-2 bg-emerald-50/80 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/60 rounded-xl text-xs">
-              <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-semibold">
-                <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center justify-between px-3 py-2 bg-wise-green-pale/40 border border-wise-green-neutral/30 dark:bg-emerald-950/30 dark:border-emerald-800/60 rounded-xl text-xs">
+              <div className="flex items-center gap-2 text-positive-deep dark:text-emerald-200 font-semibold">
+                <CheckSquare className="h-4 w-4 text-positive dark:text-wise-green" />
                 <span>
                   {selectedRequestIds.length}{" "}
                   {selectedRequestIds.length === 1 ? "request" : "requests"}{" "}
@@ -1481,17 +1481,17 @@ export function AdminDashboard({
                 <button
                   type="button"
                   onClick={handleSelectAllRequests}
-                  className="text-emerald-800 dark:text-emerald-300 hover:underline cursor-pointer font-medium"
+                  className="text-positive-deep dark:text-wise-green hover:underline cursor-pointer font-medium"
                 >
                   {selectedRequestIds.length === filteredRequests.length
                     ? "Deselect All"
                     : `Select All Filtered (${filteredRequests.length})`}
                 </button>
-                <span className="text-emerald-300 dark:text-emerald-700">•</span>
+                <span className="text-positive/30 dark:text-emerald-700">•</span>
                 <button
                   type="button"
                   onClick={() => setSelectedRequestIds([])}
-                  className="text-red-600 dark:text-red-400 hover:underline cursor-pointer font-medium"
+                  className="text-negative dark:text-negative-deep hover:underline cursor-pointer font-medium"
                 >
                   Clear Selection
                 </button>
@@ -1502,17 +1502,17 @@ export function AdminDashboard({
       )}
 
       {/* Tabs Tables Render */}
-      <div className="bg-white rounded-2xl shadow-xs border border-zinc-200/80 dark:bg-zinc-900 dark:border-zinc-800 overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-xs border border-border/10 dark:border-border/30 overflow-hidden">
         {activeTab === "users" && (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-sm text-zinc-600 dark:text-zinc-400">
-              <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/80 dark:border-zinc-800 select-none">
+            <table className="w-full border-collapse text-left text-sm text-mute">
+              <thead className="bg-canvas-soft/30 dark:bg-muted/20 text-xs font-semibold uppercase text-mute border-b border-border/10 dark:border-border/30 select-none">
                 <tr>
                   <th className="w-12 px-4 py-4 text-center">
                     <button
                       type="button"
                       onClick={handleSelectAllUsers}
-                      className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer inline-flex items-center justify-center"
+                      className="p-1 rounded hover:bg-canvas-soft dark:hover:bg-muted text-mute dark:text-foreground/80 transition-colors cursor-pointer inline-flex items-center justify-center"
                       title={
                         isAllUsersSelected
                           ? "Deselect all"
@@ -1521,9 +1521,9 @@ export function AdminDashboard({
                       aria-label="Select all shown users"
                     >
                       {isAllUsersSelected ? (
-                        <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                        <CheckSquare className="h-4 w-4 text-wise-green" />
                       ) : isPartiallyUsersSelected ? (
-                        <MinusSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                        <MinusSquare className="h-4 w-4 text-wise-green" />
                       ) : (
                         <Square className="h-4 w-4 text-zinc-400" />
                       )}
@@ -1531,75 +1531,75 @@ export function AdminDashboard({
                   </th>
                   <th
                     onClick={() => handleSortUser("name")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>User Details</span>
                       {userSortField === "name" ? (
                         userSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortUser("id")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>User ID</span>
                       {userSortField === "id" ? (
                         userSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortUser("role")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Assigned Role</span>
                       {userSortField === "role" ? (
                         userSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortUser("status")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Account Status</span>
                       {userSortField === "status" ? (
                         userSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+              <tbody className="divide-y divide-y divide-border/10 dark:divide-border/30 bg-card">
                 {filteredUsers.length === 0 ? (
                   <tr>
                     <td
@@ -1616,34 +1616,34 @@ export function AdminDashboard({
                       <tr
                         key={profile.id}
                         className={`transition-colors ${isSelected
-                          ? "bg-emerald-50/50 dark:bg-emerald-950/20"
-                          : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                          ? "bg-wise-green-pale/40 dark:bg-wise-green/10"
+                          : "hover:bg-canvas-soft/30 dark:hover:bg-muted/30"
                           }`}
                       >
                         <td className="w-12 px-4 py-4 text-center">
                           <button
                             type="button"
                             onClick={() => handleToggleSelectUser(profile.id)}
-                            className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer inline-flex items-center justify-center"
+                            className="p-1 rounded hover:bg-canvas-soft dark:hover:bg-muted text-mute dark:text-foreground/80 transition-colors cursor-pointer inline-flex items-center justify-center"
                             aria-label={`Select user ${profile.full_name || profile.id
                               }`}
                           >
                             {isSelected ? (
-                              <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                              <CheckSquare className="h-4 w-4 text-wise-green" />
                             ) : (
-                              <Square className="h-4 w-4 text-zinc-300 dark:text-zinc-600" />
+                              <Square className="h-4 w-4 text-mute/55" />
                             )}
                           </button>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-canvas-soft text-ink font-bold border border-canvas-soft flex items-center justify-center dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700">
+                            <div className="h-9 w-9 rounded-full bg-canvas-soft text-foreground font-bold border border-canvas-soft flex items-center justify-center dark:bg-muted dark:border-border/30">
                               {(profile.full_name ||
                                 profile.email ||
                                 "U")[0].toUpperCase()}
                             </div>
                             <div>
-                              <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+                              <div className="font-semibold text-foreground">
                                 {profile.full_name || "Anonymous Member"}
                               </div>
                               <div className="text-xs text-mute">
@@ -1652,16 +1652,16 @@ export function AdminDashboard({
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-mono text-xs text-zinc-400 dark:text-zinc-500">
+                        <td className="px-6 py-4 font-mono text-xs text-mute/80">
                           {profile.id}
                         </td>
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${profile.role === "admin"
-                              ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50"
+                              ? "bg-negative/10 text-negative border-negative/20 dark:bg-negative/20 dark:text-negative dark:border-negative/30"
                               : profile.role === "seller"
-                                ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
-                                : "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
+                                ? "bg-warning/10 text-warning-deep border-warning/20 dark:bg-warning/20 dark:text-warning dark:border-warning/30"
+                                : "bg-accent-cyan/10 text-ink-deep border-accent-cyan/20 dark:bg-accent-cyan/20 dark:text-accent-cyan dark:border-accent-cyan/30"
                               }`}
                           >
                             {profile.role}
@@ -1670,8 +1670,8 @@ export function AdminDashboard({
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${profile.is_active
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
-                              : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                              ? "bg-wise-green-pale text-positive-deep border-wise-green-neutral/30 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
+                              : "bg-canvas-soft text-foreground border-border/10 dark:bg-muted dark:text-mute dark:border-border/30"
                               }`}
                           >
                             {profile.is_active ? "Active" : "Inactive"}
@@ -1688,14 +1688,14 @@ export function AdminDashboard({
 
         {activeTab === "trips" && (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-sm text-zinc-600 dark:text-zinc-400">
-              <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/80 dark:border-zinc-800 select-none">
+            <table className="w-full border-collapse text-left text-sm text-mute">
+              <thead className="bg-canvas-soft/30 dark:bg-muted/20 text-xs font-semibold uppercase text-mute border-b border-border/10 dark:border-border/30 select-none">
                 <tr>
                   <th className="w-12 px-4 py-4 text-center">
                     <button
                       type="button"
                       onClick={handleSelectAllTrips}
-                      className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer inline-flex items-center justify-center"
+                      className="p-1 rounded hover:bg-canvas-soft dark:hover:bg-muted text-mute dark:text-foreground/80 transition-colors cursor-pointer inline-flex items-center justify-center"
                       title={
                         isAllTripsSelected
                           ? "Deselect all"
@@ -1704,9 +1704,9 @@ export function AdminDashboard({
                       aria-label="Select all shown trips"
                     >
                       {isAllTripsSelected ? (
-                        <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                        <CheckSquare className="h-4 w-4 text-wise-green" />
                       ) : isPartiallyTripsSelected ? (
-                        <MinusSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                        <MinusSquare className="h-4 w-4 text-wise-green" />
                       ) : (
                         <Square className="h-4 w-4 text-zinc-400" />
                       )}
@@ -1714,109 +1714,109 @@ export function AdminDashboard({
                   </th>
                   <th
                     onClick={() => handleSortTrip("title")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Trip Details</span>
                       {tripSortField === "title" ? (
                         tripSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortTrip("traveler")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Traveler / Seller</span>
                       {tripSortField === "traveler" ? (
                         tripSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortTrip("destination")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Destination</span>
                       {tripSortField === "destination" ? (
                         tripSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortTrip("slots")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Max Slots</span>
                       {tripSortField === "slots" ? (
                         tripSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortTrip("date")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Travel Period</span>
                       {tripSortField === "date" ? (
                         tripSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortTrip("status")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Status</span>
                       {tripSortField === "status" ? (
                         tripSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+              <tbody className="divide-y divide-y divide-border/10 dark:divide-border/30 bg-card">
                 {filteredTrips.length === 0 ? (
                   <tr>
                     <td
@@ -1833,31 +1833,31 @@ export function AdminDashboard({
                       <tr
                         key={trip.id}
                         className={`transition-colors ${isSelected
-                          ? "bg-emerald-50/50 dark:bg-emerald-950/20"
-                          : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                          ? "bg-wise-green-pale/40 dark:bg-wise-green/10"
+                          : "hover:bg-canvas-soft/30 dark:hover:bg-muted/30"
                           }`}
                       >
                         <td className="w-12 px-4 py-4 text-center">
                           <button
                             type="button"
                             onClick={() => handleToggleSelectTrip(trip.id)}
-                            className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer inline-flex items-center justify-center"
+                            className="p-1 rounded hover:bg-canvas-soft dark:hover:bg-muted text-mute dark:text-foreground/80 transition-colors cursor-pointer inline-flex items-center justify-center"
                             aria-label={`Select trip ${trip.id}`}
                           >
                             {isSelected ? (
-                              <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                              <CheckSquare className="h-4 w-4 text-wise-green" />
                             ) : (
-                              <Square className="h-4 w-4 text-zinc-300 dark:text-zinc-600" />
+                              <Square className="h-4 w-4 text-mute/55" />
                             )}
                           </button>
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            <div className="font-semibold text-foreground">
                               {trip.title || "Untitled Trip"}
                             </div>
                             <div
-                              className="text-xs font-mono text-zinc-400 dark:text-zinc-500 mt-0.5 truncate max-w-[200px]"
+                              className="text-xs font-mono text-mute/80 mt-0.5 truncate max-w-[200px]"
                               title={trip.id}
                             >
                               {trip.id}
@@ -1874,7 +1874,7 @@ export function AdminDashboard({
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-canvas-soft text-ink font-bold border border-canvas-soft flex items-center justify-center dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 text-xs">
+                            <div className="h-8 w-8 rounded-full bg-canvas-soft text-foreground font-bold border border-canvas-soft flex items-center justify-center dark:bg-muted dark:border-border/30 text-xs">
                               {(
                                 trip.seller?.full_name ||
                                 trip.seller?.email ||
@@ -1882,7 +1882,7 @@ export function AdminDashboard({
                               )[0].toUpperCase()}
                             </div>
                             <div>
-                              <div className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">
+                              <div className="font-semibold text-foreground text-xs">
                                 {trip.seller?.full_name || "Unknown Seller"}
                               </div>
                               <div className="text-[11px] text-mute">
@@ -1894,31 +1894,31 @@ export function AdminDashboard({
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
+                        <td className="px-6 py-4 font-medium text-foreground">
                           {trip.destination_city
                             ? `${trip.destination_city}, ${trip.destination_country}`
                             : trip.destination_country}
                         </td>
-                        <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 text-xs font-medium">
+                        <td className="px-6 py-4 text-mute text-xs font-medium">
                           {trip.max_request_slots !== null &&
                             trip.max_request_slots !== undefined
                             ? `${trip.max_request_slots} slots`
                             : "-"}
                         </td>
-                        <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400 text-xs">
+                        <td className="px-6 py-4 text-mute text-xs">
                           {formatTripDateRange(trip.start_date, trip.end_date)}
                         </td>
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${trip.status === "completed"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
+                              ? "bg-wise-green-pale text-positive-deep border-wise-green-neutral/30 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
                               : trip.status === "active"
-                                ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
+                                ? "bg-accent-cyan/10 text-ink-deep border-accent-cyan/20 dark:bg-accent-cyan/20 dark:text-accent-cyan dark:border-accent-cyan/30"
                                 : trip.status === "upcoming"
-                                  ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
+                                  ? "bg-warning/10 text-warning-deep border-warning/20 dark:bg-warning/20 dark:text-warning-deep dark:border-warning/30"
                                   : trip.status === "cancelled"
-                                    ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50"
-                                    : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                                    ? "bg-negative/10 text-negative border-negative/20 dark:bg-negative/20 dark:text-negative-deep dark:border-negative/30"
+                                    : "bg-canvas-soft text-foreground border-border/10 dark:bg-muted dark:text-mute dark:border-border/30"
                               }`}
                           >
                             {trip.status}
@@ -1935,14 +1935,14 @@ export function AdminDashboard({
 
         {activeTab === "requests" && (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-sm text-zinc-600 dark:text-zinc-400">
-              <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/80 dark:border-zinc-800 select-none">
+            <table className="w-full border-collapse text-left text-sm text-mute">
+              <thead className="bg-canvas-soft/30 dark:bg-muted/20 text-xs font-semibold uppercase text-mute border-b border-border/10 dark:border-border/30 select-none">
                 <tr>
                   <th className="w-12 px-4 py-4 text-center">
                     <button
                       type="button"
                       onClick={handleSelectAllRequests}
-                      className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer inline-flex items-center justify-center"
+                      className="p-1 rounded hover:bg-canvas-soft dark:hover:bg-muted text-mute dark:text-foreground/80 transition-colors cursor-pointer inline-flex items-center justify-center"
                       title={
                         isAllRequestsSelected
                           ? "Deselect all"
@@ -1951,9 +1951,9 @@ export function AdminDashboard({
                       aria-label="Select all shown requests"
                     >
                       {isAllRequestsSelected ? (
-                        <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                        <CheckSquare className="h-4 w-4 text-wise-green" />
                       ) : isPartiallyRequestsSelected ? (
-                        <MinusSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                        <MinusSquare className="h-4 w-4 text-wise-green" />
                       ) : (
                         <Square className="h-4 w-4 text-zinc-400" />
                       )}
@@ -1961,126 +1961,126 @@ export function AdminDashboard({
                   </th>
                   <th
                     onClick={() => handleSortRequest("item")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Requested Item</span>
                       {requestSortField === "item" ? (
                         requestSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortRequest("buyer")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Buyer</span>
                       {requestSortField === "buyer" ? (
                         requestSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortRequest("traveler")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Trip / Traveler</span>
                       {requestSortField === "traveler" ? (
                         requestSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortRequest("quantity")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Qty</span>
                       {requestSortField === "quantity" ? (
                         requestSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortRequest("price")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Price / Budget</span>
                       {requestSortField === "price" ? (
                         requestSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortRequest("date")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Date</span>
                       {requestSortField === "date" ? (
                         requestSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                   <th
                     onClick={() => handleSortRequest("status")}
-                    className="px-6 py-4 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 transition-colors"
+                    className="px-6 py-4 cursor-pointer hover:bg-canvas-soft/70 dark:hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>Status</span>
                       {requestSortField === "status" ? (
                         requestSortOrder === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowUp className="h-3.5 w-3.5 text-wise-green" />
                         ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-emerald-600 dark:text-wise-green" />
+                          <ArrowDown className="h-3.5 w-3.5 text-wise-green" />
                         )
                       ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 opacity-60" />
+                        <ArrowUpDown className="h-3.5 w-3.5 text-mute/60 opacity-60" />
                       )}
                     </div>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+              <tbody className="divide-y divide-y divide-border/10 dark:divide-border/30 bg-card">
                 {filteredRequests.length === 0 ? (
                   <tr>
                     <td
@@ -2097,31 +2097,31 @@ export function AdminDashboard({
                       <tr
                         key={req.id}
                         className={`transition-colors ${isSelected
-                          ? "bg-emerald-50/50 dark:bg-emerald-950/20"
-                          : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                          ? "bg-wise-green-pale/40 dark:bg-wise-green/10"
+                          : "hover:bg-canvas-soft/30 dark:hover:bg-muted/30"
                           }`}
                       >
                         <td className="w-12 px-4 py-4 text-center">
                           <button
                             type="button"
                             onClick={() => handleToggleSelectRequest(req.id)}
-                            className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer inline-flex items-center justify-center"
+                            className="p-1 rounded hover:bg-canvas-soft dark:hover:bg-muted text-mute dark:text-foreground/80 transition-colors cursor-pointer inline-flex items-center justify-center"
                             aria-label={`Select request ${req.id}`}
                           >
                             {isSelected ? (
-                              <CheckSquare className="h-4 w-4 text-emerald-600 dark:text-wise-green" />
+                              <CheckSquare className="h-4 w-4 text-wise-green" />
                             ) : (
-                              <Square className="h-4 w-4 text-zinc-300 dark:text-zinc-600" />
+                              <Square className="h-4 w-4 text-mute/55" />
                             )}
                           </button>
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            <div className="font-semibold text-foreground">
                               {req.item_name || "Unnamed Item"}
                             </div>
                             <div
-                              className="text-xs font-mono text-zinc-400 dark:text-zinc-500 mt-0.5 truncate max-w-[200px]"
+                              className="text-xs font-mono text-mute/80 mt-0.5 truncate max-w-[200px]"
                               title={req.id}
                             >
                               {req.id}
@@ -2138,7 +2138,7 @@ export function AdminDashboard({
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-canvas-soft text-ink font-bold border border-canvas-soft flex items-center justify-center dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 text-xs">
+                            <div className="h-8 w-8 rounded-full bg-canvas-soft text-foreground font-bold border border-canvas-soft flex items-center justify-center dark:bg-muted dark:border-border/30 text-xs">
                               {(
                                 req.buyer?.full_name ||
                                 req.buyer?.email ||
@@ -2146,7 +2146,7 @@ export function AdminDashboard({
                               )[0].toUpperCase()}
                             </div>
                             <div>
-                              <div className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">
+                              <div className="font-semibold text-foreground text-xs">
                                 {req.buyer?.full_name || "Unknown Buyer"}
                               </div>
                               <div className="text-[11px] text-mute">
@@ -2159,7 +2159,7 @@ export function AdminDashboard({
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-medium text-zinc-900 dark:text-zinc-100 text-xs">
+                          <div className="font-medium text-foreground text-xs">
                             {req.trip?.destination_city
                               ? `${req.trip.destination_city}, ${req.trip.destination_country}`
                               : req.trip?.destination_country ||
@@ -2174,11 +2174,11 @@ export function AdminDashboard({
                                 : "Unassigned traveler"}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                        <td className="px-6 py-4 text-xs font-semibold text-foreground">
                           {req.quantity || 1}x
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-semibold text-emerald-700 dark:text-wise-green text-sm">
+                          <div className="font-semibold text-positive-deep dark:text-wise-green text-sm">
                             {formatCurrency(
                               req.total_price ||
                               req.agreed_price ||
@@ -2202,16 +2202,16 @@ export function AdminDashboard({
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${req.status === "delivered"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
-                                : req.status === "purchased"
-                                  ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50"
-                                  : req.status === "accepted"
-                                    ? "bg-cyan-50 text-cyan-700 border-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-400 dark:border-cyan-900/50"
-                                    : req.status === "pending"
-                                      ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
-                                      : req.status === "rejected"
-                                        ? "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50"
-                                        : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                              ? "bg-wise-green-pale text-positive-deep border-wise-green-neutral/30 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
+                              : req.status === "purchased"
+                                ? "bg-accent-cyan/10 text-ink-deep border-accent-cyan/20 dark:bg-accent-cyan/20 dark:text-accent-cyan dark:border-accent-cyan/30"
+                                : req.status === "accepted"
+                                  ? "bg-accent-cyan/10 text-ink-deep border-accent-cyan/20 dark:bg-accent-cyan/20 dark:text-accent-cyan dark:border-accent-cyan/30"
+                                  : req.status === "pending"
+                                    ? "bg-warning/10 text-warning-deep border-warning/20 dark:bg-warning/20 dark:text-warning-deep dark:border-warning/30"
+                                    : req.status === "rejected"
+                                      ? "bg-negative/10 text-negative border-negative/20 dark:bg-negative/20 dark:text-negative-deep dark:border-negative/30"
+                                      : "bg-canvas-soft text-foreground border-border/10 dark:bg-muted dark:text-mute dark:border-border/30"
                               }`}
                           >
                             {req.status}
