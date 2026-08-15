@@ -168,14 +168,24 @@ export default async function DashboardPage() {
     console.error("Error loading dashboard data:", err);
   }
 
+  // Fetch shipping addresses for the user
+  const { data: addresses } = await supabase
+    .from("shipping_addresses")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: true });
+
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4">
       <DashboardClientView
+        userId={user.id}
         userRole={userRole}
         userEmail={userEmail}
         userName={userName}
         orders={orders}
         activeTripsCount={activeTripsCount}
+        initialAddresses={addresses || []}
       />
     </div>
   );

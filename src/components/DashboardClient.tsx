@@ -19,7 +19,7 @@ export function DashboardClient({ userId, userEmail, initialAddresses }: Dashboa
     <div className="max-w-3xl mx-auto space-y-6">
       
       {/* Premium Tabs navigation */}
-      <div className="flex border-b border-canvas-soft dark:border-zinc-800">
+      <div className="flex border-b border-black/[0.04] dark:border-white/[0.05]">
         <button
           onClick={() => setActiveTab("profile")}
           className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold transition-all border-b-2 outline-none ${
@@ -47,19 +47,19 @@ export function DashboardClient({ userId, userEmail, initialAddresses }: Dashboa
       {/* Tab Contents */}
       <div className="transition-all duration-300">
         {activeTab === "profile" ? (
-          <div className="card-content bg-white dark:bg-zinc-900 border border-canvas-soft dark:border-zinc-800 p-8 space-y-6 rounded-3xl shadow-sm">
+          <div className="card-content bg-white dark:bg-zinc-900 border border-black/[0.04] dark:border-white/[0.05] p-8 space-y-6 rounded-3xl shadow-xs">
             <div>
-              <h2 className="text-display-xs text-ink dark:text-zinc-50 font-bold tracking-tight">User Dashboard</h2>
-              <p className="text-caption text-mute mt-1">
-                Manage your personal profile and account settings.
+              <h2 className="text-xl font-bold text-foreground tracking-tight">Pengaturan Profil & Akun</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Kelola informasi identitas dan preferensi akun Anda.
               </p>
             </div>
-            <div className="h-px bg-canvas-soft dark:bg-zinc-800" />
+            <div className="h-px bg-muted/40" />
             <DashboardProfileGrid fallbackEmail={userEmail} />
             <ProfileForm />
           </div>
         ) : (
-          <div className="card-content bg-white dark:bg-zinc-900 border border-canvas-soft dark:border-zinc-800 p-8 rounded-3xl shadow-sm">
+          <div className="card-content bg-white dark:bg-zinc-900 border border-black/[0.04] dark:border-white/[0.05] p-8 rounded-3xl shadow-xs">
             <AddressManager userId={userId} initialAddresses={initialAddresses} />
           </div>
         )}
