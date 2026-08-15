@@ -45,7 +45,7 @@ export default function TripPage() {
   const filteredTrips = trips.filter(
     (trip) =>
       trip.destination_country.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trip.destination_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (trip.destination_city?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
       trip.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 

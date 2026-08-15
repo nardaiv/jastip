@@ -316,6 +316,14 @@ export async function createShippingAddress(addressData: {
   is_default: boolean;
 }) {
   const supabase = await createClient();
+
+  if (addressData.is_default) {
+    await supabase
+      .from("shipping_addresses")
+      .update({ is_default: false })
+      .eq("user_id", addressData.user_id);
+  }
+
   const { data, error } = await supabase
     .from("shipping_addresses")
     .insert(addressData)
@@ -326,5 +334,93 @@ export async function createShippingAddress(addressData: {
     throw new Error(`Failed to create shipping address: ${error?.message}`);
   }
   revalidatePath("/(user)/admin");
+  revalidatePath("/(user)/dashboard");
   return { success: true, addressId: data.id };
+}
+
+/**
+ * Updates an existing shipping address.
+ */
+export async function updateShippingAddress(
+  addressId: string,
+  userId: string,
+  addressData: {
+    contact_name: string;
+    company_name?: string | null;
+    phone_number: string;
+    street_line_1: string;
+    street_line_2?: string | null;
+    city: string;
+    state_or_province_code?: string | null;
+    postal_code: string;
+    country_code: string;
+    is_residential: boolean;
+    is_default: boolean;
+  }
+) {
+  const supabase = await createClient();
+
+  if (addressData.is_default) {
+    await supabase
+      .from("shipping_addresses")
+      .update({ is_default: false })
+      .eq("user_id", userId);
+  }
+
+  const { error } = await supabase
+    .from("shipping_addresses")
+    .update(addressData)
+    .eq("id", addressId);
+
+  if (error) {
+    throw new Error(`Failed to update shipping address: ${error.message}`);
+  }
+  revalidatePath("/(user)/admin");
+  revalidatePath("/(user)/dashboard");
+  return { success: true };
+}
+
+/**
+ * Deletes a shipping address.
+ */
+export async function deleteShippingAddress(addressId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("shipping_addresses")
+    .delete()
+    .eq("id", addressId);
+
+  if (error) {
+    throw new Error(`Failed to delete shipping address: ${error.message}`);
+  }
+  revalidatePath("/(user)/admin");
+  revalidatePath("/(user)/dashboard");
+  return { success: true };
+}
+
+/**
+ * Sets a specific address as the default address for a user.
+ */
+export async function setDefaultShippingAddress(addressId: string, userId: string) {
+  const supabase = await createClient();
+
+  // Reset default status on all other addresses of this user
+  await supabase
+    .from("shipping_addresses")
+    .update({ is_default: false })
+    .eq("user_id", userId);
+
+  // Set selected address as default
+  const { error } = await supabase
+    .from("shipping_addresses")
+    .update({ is_default: true })
+    .eq("id", addressId);
+
+  if (error) {
+    throw new Error(`Failed to set default address: ${error.message}`);
+  }
+  revalidatePath("/(user)/admin");
+  revalidatePath("/(user)/dashboard");
+  return { success: true };
 }
