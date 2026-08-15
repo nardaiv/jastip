@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { trackShipment } from "@/lib/fedex/client";
+import { trackShipment, createFedExShipment } from "@/lib/fedex/client";
 
 export interface CreateShipmentParams {
   tripId: string;
@@ -423,4 +423,204 @@ export async function setDefaultShippingAddress(addressId: string, userId: strin
   revalidatePath("/(user)/admin");
   revalidatePath("/(user)/dashboard");
   return { success: true };
+}
+
+/**
+ * Automatically creates a FedEx shipment for a purchased item request, 
+ * inserts it into shipments table, and transitions its status to 'shipped'.
+ */
+export async function shipItemWithFedEx(itemRequestId: string) {
+  const supabase = await createClient();
+
+  // 1. Fetch item request details including the trip seller_id
+  const { data: req, error: reqError } = await supabase
+    .from("item_requests")
+    .select(`
+      id,
+      trip_id,
+      buyer_id,
+      item_name,
+      quantity,
+      weight_value,
+      weight_unit,
+      total_price,
+      currency,
+      shipping_address_id,
+      sender_address_id,
+      trips:trip_id (
+        seller_id
+      )
+    `)
+    .eq("id", itemRequestId)
+    .single();
+
+  if (reqError || !req) {
+    throw new Error(`Item request not found: ${reqError?.message || "unknown error"}`);
+  }
+
+  if (!req.shipping_address_id || !req.sender_address_id) {
+    throw new Error("Alamat pengirim (seller) atau penerima (buyer) belum diatur untuk request ini.");
+  }
+
+  // 2. Fetch shipper and recipient addresses
+  const { data: shipperAddr, error: shipperError } = await supabase
+    .from("shipping_addresses")
+    .select("*")
+    .eq("id", req.sender_address_id)
+    .single();
+
+  const { data: recipientAddr, error: recipientError } = await supabase
+    .from("shipping_addresses")
+    .select("*")
+    .eq("id", req.shipping_address_id)
+    .single();
+
+  if (shipperError || !shipperAddr) {
+    throw new Error(`Shipper address not found: ${shipperError?.message}`);
+  }
+  if (recipientError || !recipientAddr) {
+    throw new Error(`Recipient address not found: ${recipientError?.message}`);
+  }
+
+  const alignFedExAddress = (addr: any, defaultName: string) => {
+    const city = (addr.city || "").toLowerCase();
+    const street = `${addr.street_line_1 || ""} ${addr.street_line_2 || ""}`.toLowerCase();
+    const country = (addr.country || "").toLowerCase();
+
+    // Default values
+    let countryCode = "ID";
+    let postalCode = "10110";
+    let stateOrProvinceCode = "";
+    let cleanCity = addr.city || "Jakarta";
+
+    if (city.includes("tokyo") || street.includes("tokyo") || country.includes("japan") || country.includes("jepang") || country.includes("jp")) {
+      countryCode = "JP";
+      postalCode = "100-0001";
+      cleanCity = "Tokyo";
+    } else if (city.includes("singapore") || country.includes("singapore") || country.includes("singapura") || country.includes("sg")) {
+      countryCode = "SG";
+      postalCode = "018981";
+      cleanCity = "Singapore";
+    } else if (city.includes("seoul") || country.includes("korea") || country.includes("kr")) {
+      countryCode = "KR";
+      postalCode = "03045";
+      cleanCity = "Seoul";
+    } else if (city.includes("springfield") || street.includes("evergreen") || country.includes("us") || country.includes("america") || country.includes("usa")) {
+      countryCode = "US";
+      postalCode = "97477"; // Springfield, OR
+      stateOrProvinceCode = "OR";
+      cleanCity = "Springfield";
+    } else {
+      countryCode = "ID";
+      postalCode = addr.postal_code?.replace(/[^\d]/g, "") || "10110";
+      if (postalCode.length !== 5) postalCode = "10110";
+    }
+
+    return {
+      personName: addr.contact_name || defaultName,
+      phoneNumber: (addr.phone_number || "081234567890").replace(/[^\d+]/g, ""),
+      streetLines: [addr.street_line_1 || "Alamat", addr.street_line_2].filter(Boolean) as string[],
+      city: cleanCity,
+      stateOrProvinceCode,
+      postalCode,
+      countryCode,
+    };
+  };
+
+  const shipper = alignFedExAddress(shipperAddr, "Traveler Seller");
+  const recipient = alignFedExAddress(recipientAddr, "Buyer Customer");
+
+  // 3. Call FedEx API to create a shipment
+  let fedexData;
+  try {
+    fedexData = await createFedExShipment({
+      shipper,
+      recipient,
+      serviceType: "INTERNATIONAL_PRIORITY",
+      packagingType: "YOUR_PACKAGING",
+      weightValue: req.weight_value || 1,
+      weightUnit: (req.weight_unit as "KG" | "LB") || "KG",
+      declaredValue: req.total_price || 10,
+      declaredCurrency: req.currency || "IDR",
+    });
+  } catch (err: any) {
+    console.error("FedEx API Error:", err);
+    throw new Error(`Gagal membuat shipment di FedEx: ${err.message || String(err)}`);
+  }
+
+  // Parse tracking info from FedEx response
+  const transactionShipment = fedexData?.output?.transactionShipments?.[0];
+  const masterTrackingNumber = transactionShipment?.masterTrackingNumber || null;
+  const trackingNumber = transactionShipment?.pieceResponses?.[0]?.trackingNumber || masterTrackingNumber;
+  const shipmentId = transactionShipment?.shipmentAdvisoryDetails?.shipmentId || null;
+  const transactionId = fedexData?.transactionId || null;
+
+  // 4. Create the shipment record in our shipments table
+  const sellerId = (req.trips as any)?.seller_id || req.buyer_id;
+
+  const { data: dbShipment, error: dbShipmentError } = await supabase
+    .from("shipments")
+    .insert({
+      trip_id: req.trip_id,
+      seller_id: sellerId,
+      buyer_id: req.buyer_id,
+      sender_address_id: req.sender_address_id,
+      recipient_address_id: req.shipping_address_id,
+      fedex_tracking_number: trackingNumber,
+      fedex_master_tracking_number: masterTrackingNumber,
+      fedex_shipment_id: shipmentId,
+      fedex_transaction_id: transactionId,
+      service_type: "INTERNATIONAL_PRIORITY",
+      packaging_type: "YOUR_PACKAGING",
+      weight_value: req.weight_value || 1,
+      weight_unit: req.weight_unit || "KG",
+      declared_value: req.total_price || 0,
+      declared_currency: "IDR",
+      status: "label_created",
+    })
+    .select("id")
+    .single();
+
+  if (dbShipmentError || !dbShipment) {
+    throw new Error(`Failed to create database shipment record: ${dbShipmentError?.message}`);
+  }
+
+  // 5. Associate in shipment_items table
+  const { error: assocError } = await supabase
+    .from("shipment_items")
+    .insert({
+      shipment_id: dbShipment.id,
+      item_request_id: itemRequestId,
+      packed_quantity: req.quantity,
+    });
+
+  if (assocError) {
+    throw new Error(`Failed to associate request to shipment items: ${assocError.message}`);
+  }
+
+  // 6. Transition request status to 'shipped'
+  const { error: updateError } = await supabase
+    .from("item_requests")
+    .update({
+      status: "shipped",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", itemRequestId);
+
+  if (updateError) {
+    throw new Error(`Failed to update item request status: ${updateError.message}`);
+  }
+
+  // 7. Trigger initial FedEx tracking sync
+  if (trackingNumber) {
+    try {
+      await getShipmentTracking(dbShipment.id);
+    } catch (e) {
+      console.warn("Initial FedEx tracking sync skipped:", e);
+    }
+  }
+
+  revalidatePath("/(user)/admin");
+  revalidatePath(`/seller/trip/${req.trip_id}/requests`);
+  return { success: true, shipmentId: dbShipment.id, trackingNumber };
 }

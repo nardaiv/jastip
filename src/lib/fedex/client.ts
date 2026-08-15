@@ -162,10 +162,15 @@ export async function createFedExShipment(params: {
   packagingType: string;
   weightValue: number;
   weightUnit: "KG" | "LB";
+  declaredValue?: number;
+  declaredCurrency?: string;
 }) {
   const token = await getFedExToken();
 
-  const payload = {
+  const isInternational = params.shipper.countryCode !== params.recipient.countryCode;
+
+  const payload: any = {
+    labelResponseOptions: "URL_ONLY",
     accountNumber: {
       value: process.env.FEDEX_ACCOUNT_NUMBER || "740561073",
     },
@@ -224,10 +229,52 @@ export async function createFedExShipment(params: {
       labelSpecification: {
         labelFormatType: "COMMON2D",
         imageType: "PDF",
-        labelStockType: "PAPER_8.5X11_TOP_HALF_LABEL",
+        labelStockType: "PAPER_85X11_TOP_HALF_LABEL",
       },
     },
   };
+
+  if (isInternational) {
+    let valAmount = params.declaredValue || 10;
+    let valCurrency = params.declaredCurrency || "USD";
+
+    if (valCurrency === "IDR") {
+      valAmount = Math.round(valAmount / 15000);
+      valCurrency = "USD";
+    }
+    if (valAmount <= 0) valAmount = 10;
+
+    payload.requestedShipment.customsClearanceDetail = {
+      dutiesPayment: {
+        paymentType: "SENDER",
+      },
+      isDocumentOnly: false,
+      customsValue: {
+        amount: valAmount,
+        currency: valCurrency,
+      },
+      commodities: [
+        {
+          description: "Shopping Goods (Jastip)",
+          countryOfManufacture: params.shipper.countryCode,
+          weight: {
+            units: params.weightUnit,
+            value: params.weightValue,
+          },
+          quantity: 1,
+          quantityUnits: "PCS",
+          unitPrice: {
+            amount: valAmount,
+            currency: valCurrency,
+          },
+          customsValue: {
+            amount: valAmount,
+            currency: valCurrency,
+          },
+        },
+      ],
+    };
+  }
 
   const res = await fetch(`${FEDEX_BASE_URL}/ship/v1/shipments`, {
     method: "POST",
@@ -240,8 +287,9 @@ export async function createFedExShipment(params: {
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    console.error("FedEx Error Response:", JSON.stringify(errorData, null, 2));
     throw new Error(
-      errorData?.errors?.[0]?.message || `Shipment creation failed with status ${res.status}`
+      `API_ERR: ${JSON.stringify(errorData)} | PAYLOAD: ${JSON.stringify(payload)}`
     );
   }
 

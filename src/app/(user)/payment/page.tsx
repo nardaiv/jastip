@@ -33,8 +33,8 @@ function PaymentContent() {
     load();
   }, [reqId]);
 
-  const price = item?.price || 265000;
-  const fee = item?.fee || Math.round(price * 0.1);
+  const price = item?.estimated_price || 265000;
+  const fee = item?.jastip_fee || Math.round(price * 0.1);
   const shippingFee = item?.shipping_fee || 20000;
   const totalPayment = price + fee + shippingFee;
 
@@ -144,7 +144,7 @@ function PaymentContent() {
           {item && (
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-xs text-slate-600">
               <div>
-                <span className="font-bold text-slate-900">{item.model}</span> ({item.merk}) x{item.kuantitas}
+                <span className="font-bold text-slate-900">{item.item_name}</span> x{item.quantity}
               </div>
               <div className="text-right font-medium">
                 {item.country}

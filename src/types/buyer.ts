@@ -23,16 +23,22 @@ export interface SellerTrip {
 export interface BuyerRequest {
   id: string; // Real item_requests use UUID
   user_id?: string | null;
-  model: string;
-  merk: string;
-  kuantitas: number;
+  trip_id: string;
+  item_name: string;
+  description?: string | null;
+  quantity: number;
   seller_name: string;
   country: string;
-  price: number;
-  fee: number;
-  shipping_fee: number;
-  photo_url?: string | null;
-  alamat: string;
+  estimated_price?: number | null;
+  currency?: string | null;
+  jastip_fee?: number | null;
+  shipping_fee?: number | null;
+  total_price?: number | null;
+  reference_link?: string | null;
+  image_url?: string | null;
+  shipping_address_id?: string | null;
+  weight_value?: number | null;
+  weight_unit?: string | null;
   status: RequestStatus;
   created_at?: string;
 }

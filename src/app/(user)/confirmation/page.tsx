@@ -83,8 +83,8 @@ function ConfirmationContent() {
     );
   }
 
-  const price = item.price || 265000;
-  const fee = item.fee || Math.round(price * 0.1);
+  const price = item.estimated_price || 265000;
+  const fee = item.jastip_fee || Math.round(price * 0.1);
   const shippingFee = item.shipping_fee || 20000;
   const totalDibayar = price + fee + shippingFee;
 
@@ -117,10 +117,10 @@ function ConfirmationContent() {
         {/* Informasi Barang */}
         <div className="flex items-start gap-4 sm:gap-5 bg-slate-50 p-5 rounded-2xl border border-slate-200/80">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-200 rounded-xl flex items-center justify-center text-slate-400 font-mono text-xs shrink-0 overflow-hidden">
-            {item.photo_url ? (
+            {item.image_url ? (
               <img
-                src={item.photo_url}
-                alt={item.model}
+                src={item.image_url}
+                alt={item.item_name}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -129,11 +129,10 @@ function ConfirmationContent() {
           </div>
           <div className="space-y-1">
             <h2 className="text-lg sm:text-xl font-bold text-slate-950">
-              {item.model}
+              {item.item_name}
             </h2>
             <p className="text-sm text-slate-600">
-              Merk: <span className="font-semibold text-slate-900">{item.merk}</span> • Kuantitas:{" "}
-              <span className="font-semibold text-slate-900">{item.kuantitas}</span>
+              Kuantitas: <span className="font-semibold text-slate-900">{item.quantity}</span>
             </p>
             <p className="text-xs text-slate-500 mt-1">
               Seller: <span className="font-bold text-slate-800">{item.seller_name}</span> ({item.country})

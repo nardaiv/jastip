@@ -227,7 +227,7 @@ export default function PricingPage() {
       jastip_fee: jastipFeeIdr,
       shipping_fee: safeShippingFee,
       total_price: totalPriceIdr,
-      status: "purchased",
+      status: "accepted",
     };
 
     if (useFedEx) {
