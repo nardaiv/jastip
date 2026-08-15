@@ -18,6 +18,7 @@ import {
   Info 
 } from "lucide-react";
 import { getFedExRatesAction } from "@/app/actions/fedex";
+import { sendRequestStatusEmail, updateRequestStatusAction } from "@/app/actions/email";
 
 export default function PricingPage() {
   const params = useParams();
@@ -237,18 +238,14 @@ export default function PricingPage() {
       updatePayload.weight_unit = weightUnit;
     }
 
-    const { error } = await supabase
-      .from("item_requests")
-      .update(updatePayload)
-      .eq("id", requestId);
-
+    const res = await updateRequestStatusAction(requestId, "accepted", updatePayload);
     setSaving(false);
 
-    if (!error) {
+    if (res.success) {
       router.push(`/seller/trip/${params.tripId}/requests`);
       router.refresh();
     } else {
-      alert("Gagal menyimpan harga.");
+      alert(`Gagal menyimpan harga: ${res.error}`);
     }
   };
 
