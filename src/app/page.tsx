@@ -1,336 +1,378 @@
-import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
+"use client";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import {
+  fetchBuyerRequests,
+  fetchSellerTrips,
+  updateRequestStatus,
+} from "@/lib/services/data-service";
+import { BuyerRequest, SellerTrip } from "@/types/database";
+
+export default function BuyerDashboardPage() {
+  const [requests, setRequests] = useState<BuyerRequest[]>([]);
+  const [trips, setTrips] = useState<SellerTrip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const [reqsData, tripsData] = await Promise.all([
+          fetchBuyerRequests(),
+          fetchSellerTrips(),
+        ]);
+        setRequests(reqsData);
+        setTrips(tripsData);
+      } catch (e) {
+        console.error("Failed to load dashboard data:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const handleCancelRequest = async (id: string) => {
+    const isConfirmed = window.confirm(
+      "Apakah Anda yakin ingin membatalkan request ini karena harga tidak sesuai?"
+    );
+    if (!isConfirmed) return;
+
+    setCancellingId(id);
+    try {
+      await updateRequestStatus(id, "cancelled");
+      setRequests((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: "cancelled" } : item
+        )
+      );
+    } catch (e) {
+      console.error("Cancel request error:", e);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const formatRupiah = (number: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(number);
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-canvas-soft font-sans text-ink antialiased">
+    <div className="min-h-screen bg-[#e9ebe6] text-slate-900 flex flex-col">
+      <Navbar />
 
-      <header className="sticky top-0 z-50 w-full bg-canvas border-b border-canvas-soft/85 py-4">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-display font-black text-2xl text-ink">
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 md:py-10 space-y-10 flex-1">
+        
+        {/* Header Dashboard */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white border border-slate-200/80 p-6 md:p-8 rounded-3xl shadow-sm">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-green-light border border-emerald-200 text-brand-green text-xs font-bold uppercase tracking-wider mb-2">
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse"></span>
+              Buyer Platform
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-950">
+              Dashboard Buyer
+            </h1>
+            <p className="text-slate-600 mt-1.5 text-base md:text-lg">
+              Kelola pesanan titipan barang luar negeri dan pantau jadwal trip seller aktif.
+            </p>
+          </div>
+          <Link
+            href="/request"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-brand-green hover:bg-[#43A047] active:scale-95 font-bold rounded-2xl text-white transition-all shadow-md text-base shrink-0 cursor-pointer"
+          >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-6 w-6 text-primary stroke-[3px]"
+              viewBox="0 0 24 24"
             >
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-              <line x1="12" y1="22.08" x2="12" y2="12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.5"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
-            <span className="tracking-tight text-ink dark:text-zinc-50">Jastip</span>
+            Buat Request Barang
           </Link>
-
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8 text-body-sm-strong text-ink dark:text-zinc-300">
-            <a href="#how-it-works" className="hover:text-primary transition-colors">
-              How It Works
-            </a>
-            <a href="#featured-trips" className="hover:text-primary transition-colors">
-              Featured Trips
-            </a>
-            <a href="#why-us" className="hover:text-primary transition-colors">
-              Why Jastip
-            </a>
-          </nav>
-
-          {/* Auth CTA Buttons */}
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Link href="/dashboard">
-                <button className="button-primary text-sm font-semibold">
-                  Go to Dashboard
-                </button>
-              </Link>
-            ) : (
-              <>
-                <Link href="/login">
-                  <button className="button-secondary text-sm font-semibold px-5 py-2.5 h-10">
-                    Sign In
-                  </button>
-                </Link>
-                <Link href="/signup">
-                  <button className="button-primary text-sm font-semibold px-5 py-2.5 h-10">
-                    Sign Up
-                  </button>
-                </Link>
-              </>
-            )}
-          </div>
         </div>
-      </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-16 pb-20 lg:pt-28 lg:pb-32 bg-canvas-soft">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
+        {/* Status Request Barang Anda */}
+        <div className="space-y-6" id="status">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-slate-950 tracking-tight">
+              Daftar Titipan & Status Request
+            </h2>
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-600">
+              {requests.length} Permintaan
+            </span>
+          </div>
 
-            {/* Left Content Column */}
-            <div className="space-y-8 lg:col-span-7 text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-wise-green-pale border border-wise-green-neutral text-ink-deep text-xs font-semibold uppercase tracking-wider">
-                🚀 Smart peer-to-peer delivery
+          {loading ? (
+            <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200">
+              <div className="w-10 h-10 border-4 border-brand-green border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="font-semibold text-sm">Memuat daftar request...</p>
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-4">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-3xl">
+                🛍️
               </div>
-
-              <h1 className="text-display-xl text-ink font-black tracking-tight leading-[1.1]">
-                Buy anything from anywhere, <br />
-                <span className="text-emerald-700 dark:text-primary">
-                  delivered by travelers.
-                </span>
-              </h1>
-
-              <p className="text-body-lg text-body leading-relaxed max-w-2xl">
-                Want a local delicacy, fashion brand, or product unavailable in your country? Connect with travelers visiting those countries and get it delivered safely.
+              <h3 className="text-xl font-bold text-slate-900">Belum Ada Request Titipan</h3>
+              <p className="text-slate-500 max-w-md mx-auto text-sm">
+                Kamu belum memiliki request barang titipan. Mulai buat pesanan pertamamu sekarang!
               </p>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <Link href={user ? "/dashboard" : "/signup"} className="w-full sm:w-auto">
-                  <button className="button-primary w-full sm:w-auto text-base font-semibold h-12 px-8">
-                    Start Ordering
-                  </button>
-                </Link>
-                <a href="#how-it-works" className="w-full sm:w-auto">
-                  <button className="button-tertiary w-full sm:w-auto text-base font-semibold h-12 px-8">
-                    See How It Works
-                  </button>
-                </a>
-              </div>
+              <Link
+                href="/request"
+                className="inline-block px-6 py-2.5 bg-brand-green text-white font-semibold rounded-xl text-sm shadow-sm hover:opacity-90 transition-all"
+              >
+                + Buat Request Pertama
+              </Link>
             </div>
+          ) : (
+            <div className="space-y-5">
+              {requests.map((item) => {
+                const totalBiaya = (item.price || 0) + (item.fee || 0) + (item.shipping_fee || 0);
 
-            {/* Right Card Mockup Column (Wise Signature Card Style) */}
-            <div className="lg:col-span-5 relative">
-              <div className="card-content max-w-sm mx-auto hover:scale-[1.02] transition-transform duration-300">
+                return (
+                  <div
+                    key={item.id}
+                    className="bg-white border border-slate-200/90 rounded-3xl p-6 md:p-7 shadow-sm hover:shadow-md transition-all flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center"
+                  >
+                    {/* Informasi Barang */}
+                    <div className="flex items-start gap-4 sm:gap-5 w-full lg:w-auto">
+                      <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-mono text-xs border border-slate-200 shrink-0 overflow-hidden relative">
+                        {item.photo_url ? (
+                          <img
+                            src={item.photo_url}
+                            alt={item.model}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="font-semibold text-slate-400">IMG</span>
+                        )}
+                      </div>
 
-                {/* Traveler Card Title */}
-                <div className="flex items-center justify-between border-b border-canvas-soft pb-4 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-canvas-soft flex items-center justify-center font-bold text-ink">
-                      AM
+                      <div className="grow">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <h3 className="text-lg md:text-xl font-bold text-slate-950 tracking-tight">
+                            {item.model}
+                          </h3>
+                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                            x{item.kuantitas}
+                          </span>
+                        </div>
+
+                        <p className="text-sm text-slate-600">
+                          Merk: <span className="text-slate-900 font-semibold">{item.merk}</span>
+                        </p>
+                        <p className="text-xs text-slate-400 font-mono mt-0.5">
+                          ID: {item.id}
+                        </p>
+
+                        <div className="mt-2.5 text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1">
+                          <p>
+                            Seller: <span className="text-slate-900 font-semibold">{item.seller_name}</span>
+                          </p>
+                          <p>
+                            Negara: <span className="text-slate-900 font-semibold">{item.country}</span>
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-body-sm-strong text-ink">Alex Morgan</h4>
-                      <span className="text-caption text-mute">⭐️ 4.9 (42 reviews)</span>
+
+                    {/* Sisi Kanan: Status, Estimasi Total Harga, & Action Buttons */}
+                    <div className="flex flex-col items-start lg:items-end gap-3.5 w-full lg:w-auto shrink-0 border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100">
+                      
+                      {/* Tag Status */}
+                      <div>
+                        {item.status === "pending" && (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 uppercase tracking-wider">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                            Pending
+                          </span>
+                        )}
+                        {item.status === "accepted" && (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-brand-green-light text-brand-green border border-emerald-300 uppercase tracking-wider">
+                            <span className="w-2 h-2 rounded-full bg-brand-green"></span>
+                            Accepted
+                          </span>
+                        )}
+                        {item.status === "purchased" && (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                            Purchased
+                          </span>
+                        )}
+                        {item.status === "rejected" && (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 uppercase tracking-wider">
+                            ✕ Rejected
+                          </span>
+                        )}
+                        {item.status === "cancelled" && (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-300 uppercase tracking-wider">
+                            ⊘ Cancelled
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Total Biaya */}
+                      <div className="text-left lg:text-right">
+                        <p className="text-xs text-slate-500 font-medium">Estimasi Total Biaya</p>
+                        <p className="text-2xl md:text-3xl font-extrabold text-brand-green tracking-tight">
+                          {formatRupiah(totalBiaya)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Barang: {formatRupiah(item.price || 0)} • Fee: {formatRupiah(item.fee || 0)} • Ongkir: {formatRupiah(item.shipping_fee || 0)}
+                        </p>
+                      </div>
+
+                      {/* Tombol / Keterangan Aksi Berdasarkan Status */}
+                      <div className="w-full lg:w-auto">
+                        {item.status === "pending" && (
+                          <div className="text-xs text-amber-900 bg-amber-50 px-4 py-2 rounded-xl border border-amber-200 text-center lg:text-right font-medium">
+                            ⏳ Request terkirim (Menunggu respon & konfirmasi harga seller)
+                          </div>
+                        )}
+
+                        {item.status === "accepted" && (
+                          <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto">
+                            <Link
+                              href={`/confirmation?id=${item.id}`}
+                              className="px-5 py-2.5 bg-brand-green hover:bg-[#43A047] text-white font-bold rounded-xl text-sm transition-all shadow-sm active:scale-95 text-center cursor-pointer"
+                            >
+                              ✓ Konfirmasi Harga & Bayar
+                            </Link>
+                            <button
+                              onClick={() => handleCancelRequest(item.id)}
+                              disabled={cancellingId === item.id}
+                              className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold rounded-xl text-sm transition-all border border-rose-200 active:scale-95 cursor-pointer text-center"
+                            >
+                              {cancellingId === item.id ? "Membatalkan..." : "Batalkan Request"}
+                            </button>
+                          </div>
+                        )}
+
+                        {item.status === "purchased" && (
+                          <Link
+                            href={`/tracking?id=${item.id}`}
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all shadow-sm active:scale-95 w-full lg:w-auto text-center"
+                          >
+                            <span>📦</span>
+                            Lacak Status Pesanan
+                          </Link>
+                        )}
+
+                        {item.status === "rejected" && (
+                          <div className="text-xs text-rose-700 bg-rose-50 px-3.5 py-2 rounded-xl border border-rose-200 text-center lg:text-right font-medium">
+                            ❌ Request ditolak oleh seller
+                          </div>
+                        )}
+
+                        {item.status === "cancelled" && (
+                          <div className="text-xs text-slate-600 bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-200 text-center lg:text-right font-medium">
+                            🚫 Dibatalkan (Harga Tidak Sesuai)
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   </div>
-                  <span className="badge-positive">
-                    Active Trip
-                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Jadwal Trip Seller Per Negara */}
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-950 tracking-tight">
+                Jadwal Trip Seller Per Negara
+              </h2>
+              <p className="text-sm text-slate-600 mt-0.5">
+                Pilih negara destinasi traveler aktif untuk menitip barang impianmu.
+              </p>
+            </div>
+            <span className="text-xs px-3.5 py-1.5 rounded-full bg-brand-green-light text-brand-green font-bold border border-emerald-200 w-fit">
+              ✈️ Traveler Aktif Terverifikasi
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {trips.map((trip) => (
+              <div
+                key={trip.id}
+                className="p-6 bg-brand-green-light/70 border border-emerald-200/80 rounded-2xl flex flex-col justify-between hover:border-brand-green hover:shadow-md transition-all group"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl group-hover:scale-110 transition-transform">
+                      {trip.flag}
+                    </span>
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${
+                        trip.status === "Aktif"
+                          ? "bg-brand-green text-white"
+                          : "bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      {trip.status}
+                    </span>
+                  </div>
+
+                  <h3 className="text-2xl font-extrabold text-slate-950 tracking-tight">
+                    {trip.country}
+                  </h3>
+                  <p className="text-sm text-slate-700 mt-1">
+                    Seller: <span className="text-slate-950 font-bold">{trip.seller_name}</span>
+                  </p>
+
+                  <div className="mt-4 pt-3 border-t border-emerald-200 text-xs text-slate-700 space-y-1.5">
+                    <p className="flex items-center gap-1.5">
+                      <span>🛫</span>
+                      <span className="font-semibold text-slate-900">Berangkat:</span> {trip.departure_date}
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <span>🛬</span>
+                      <span className="font-semibold text-slate-900">Kembali:</span> {trip.return_date}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Trip Route */}
-                <div className="space-y-3 mb-5">
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-emerald-600">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    <span className="text-caption font-semibold text-mute">DEPARTING FROM</span>
-                    <span className="text-body-sm-strong text-ink">Tokyo, Japan (NRT)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 text-primary">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    <span className="text-caption font-semibold text-mute">ARRIVING TO</span>
-                    <span className="text-body-sm-strong text-ink">Jakarta, Indonesia (CGK)</span>
-                  </div>
-                </div>
-
-                {/* Trip Details */}
-                <div className="bg-canvas-soft p-4 rounded-md space-y-2 border border-canvas-soft">
-                  <div className="flex justify-between text-caption">
-                    <span className="text-mute">Delivery Date</span>
-                    <span className="font-semibold text-ink">Aug 20, 2026</span>
-                  </div>
-                  <div className="flex justify-between text-caption">
-                    <span className="text-mute">Accepting up to</span>
-                    <span className="font-semibold text-ink">10 kg remaining</span>
-                  </div>
-                </div>
-
-                {/* Call to action inside card */}
-                <Link href={user ? "/dashboard" : "/signup"} className="block mt-5">
-                  <button className="button-primary w-full text-xs font-semibold py-2.5 rounded-xl">
-                    Request Custom Purchase
-                  </button>
+                <Link
+                  href={`/request?seller=${encodeURIComponent(trip.seller_name)}&country=${encodeURIComponent(trip.country)}`}
+                  className="mt-6 w-full py-3 bg-white hover:bg-emerald-50 text-brand-green border border-emerald-300 text-center rounded-xl text-sm font-bold transition-all shadow-xs inline-block active:scale-95 cursor-pointer"
+                >
+                  Request ke Seller Ini →
                 </Link>
               </div>
-            </div>
-
+            ))}
           </div>
         </div>
-      </section>
 
-      {/* How it Works Section (Content Band Style) */}
-      <section id="how-it-works" className="py-20 lg:py-28 bg-canvas text-ink border-t border-canvas-soft">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      </main>
 
-          <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-            <span className="text-caption font-semibold uppercase tracking-wider text-emerald-700">Simple workflow</span>
-            <h2 className="text-display-md text-ink font-black tracking-tight">
-              Two roles, one seamless process
-            </h2>
-            <p className="text-body-md text-body">
-              Whether you are looking to purchase foreign goods or wishing to offset your travel expenses.
-            </p>
-          </div>
-
-          <div className="grid gap-12 md:grid-cols-2">
-
-            {/* Buyer Path (card-feature-sage) */}
-            <div className="card-feature-sage space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-canvas flex items-center justify-center font-bold text-lg">
-                  🛍️
-                </div>
-                <h3 className="text-display-xs text-ink font-semibold">For Buyers</h3>
-              </div>
-              <ul className="space-y-4 text-body-sm text-body">
-                <li className="flex gap-3">
-                  <span className="font-bold text-ink">1.</span>
-                  <span><strong>Submit requests:</strong> Create an order detailing what you want to buy, the price, and location.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-ink">2.</span>
-                  <span><strong>Match traveler:</strong> A traveler flying from that origin route accepts your offer.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-ink">3.</span>
-                  <span><strong>Secure escrow payment:</strong> Pay safely. Funds are held in escrow until delivery.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-ink">4.</span>
-                  <span><strong>Deliver & Release:</strong> Meet up or receive your shipment, then release the traveler's payout.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Traveler Path (card-feature-green) */}
-            <div className="card-feature-green space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-canvas flex items-center justify-center font-bold text-lg">
-                  ✈️
-                </div>
-                <h3 className="text-display-xs text-ink font-semibold">For Travelers</h3>
-              </div>
-              <ul className="space-y-4 text-body-sm text-body">
-                <li className="flex gap-3">
-                  <span className="font-bold text-ink">1.</span>
-                  <span><strong>Publish Trip:</strong> Add your travel itinerary, departure/arrival ports, and available baggage weight.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-ink">2.</span>
-                  <span><strong>Collect requests:</strong> Browse and accept shopping requests submitted by local buyers.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-ink">3.</span>
-                  <span><strong>Shop & Deliver:</strong> Buy the items overseas, pack them in your luggage, and bring them home.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-ink">4.</span>
-                  <span><strong>Earn tips:</strong> Deliver goods to buyers and receive your tip payouts directly into your wallet.</span>
-                </li>
-              </ul>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Trips Section (Sage-Tinted Canvas Soft surface) */}
-      <section id="featured-trips" className="py-20 lg:py-28 bg-canvas-soft text-ink border-t border-canvas-soft">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
-          <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-            <span className="text-caption font-semibold uppercase tracking-wider text-emerald-700">Popular Routes</span>
-            <h2 className="text-display-md text-ink font-black tracking-tight">
-              Featured active trips
-            </h2>
-            <p className="text-body-md text-body">
-              Explore active listings to submit custom shopping requests to travelers today.
-            </p>
-          </div>
-
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-
-            {/* Trip 1 */}
-            <div className="card-content space-y-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="badge-positive uppercase font-bold text-xs">Aug 15</span>
-                <span className="text-caption text-mute">Available: 8 kg</span>
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-display font-black text-lg text-ink">Singapore (SIN) ➔ Jakarta (CGK)</h4>
-                <p className="text-caption text-mute">Traveler: Clarissa W.</p>
-              </div>
-              <Link href={user ? "/dashboard" : "/signup"} className="block">
-                <button className="button-tertiary w-full text-sm font-semibold py-2">
-                  Request Item
-                </button>
-              </Link>
-            </div>
-
-            {/* Trip 2 */}
-            <div className="card-content space-y-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="badge-positive uppercase font-bold text-xs">Aug 24</span>
-                <span className="text-caption text-mute">Available: 15 kg</span>
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-display font-black text-lg text-ink">Seoul, KR (ICN) ➔ Jakarta (CGK)</h4>
-                <p className="text-caption text-mute">Traveler: Min-Ho K.</p>
-              </div>
-              <Link href={user ? "/dashboard" : "/signup"} className="block">
-                <button className="button-tertiary w-full text-sm font-semibold py-2">
-                  Request Item
-                </button>
-              </Link>
-            </div>
-
-            {/* Trip 3 */}
-            <div className="card-content space-y-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="badge-positive uppercase font-bold text-xs">Sep 02</span>
-                <span className="text-caption text-mute">Available: 5 kg</span>
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-display font-black text-lg text-ink">Bangkok, TH (BKK) ➔ Surabaya (SUB)</h4>
-                <p className="text-caption text-mute">Traveler: Somchai P.</p>
-              </div>
-              <Link href={user ? "/dashboard" : "/signup"} className="block">
-                <button className="button-tertiary w-full text-sm font-semibold py-2">
-                  Request Item
-                </button>
-              </Link>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Wise-inspired Footer */}
-      <footer className="mt-auto py-12 bg-ink text-canvas-soft border-t border-canvas-soft/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-body-sm text-canvas-soft/75">
-          <span>&copy; {new Date().getFullYear()} Jastip App. All rights reserved.</span>
+      {/* Modern Footer */}
+      <footer className="mt-auto py-8 bg-slate-900 text-slate-400 border-t border-slate-800 text-xs text-center">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© {new Date().getFullYear()} Jastip Buyer Platform. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Support Desk</a>
+            <Link href="/" className="hover:text-white transition-colors">Dashboard</Link>
+            <Link href="/request" className="hover:text-white transition-colors">Buat Request</Link>
+            <Link href="/profile" className="hover:text-white transition-colors">Profil</Link>
           </div>
         </div>
       </footer>
-
     </div>
   );
 }
