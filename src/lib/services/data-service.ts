@@ -7,6 +7,7 @@ import {
   TrackingShipment,
   RequestStatus,
 } from "@/types/buyer";
+import { sendRequestStatusEmail, updateRequestStatusAction } from "@/app/actions/email";
 
 // Empty mock data arrays for Supabase compatibility
 export const INITIAL_SELLER_TRIPS: SellerTrip[] = [];
@@ -274,6 +275,10 @@ export async function createBuyerRequest(
 
   if (error) {
     console.warn("Supabase insert item_requests error:", error);
+  } else if (inserted?.id) {
+    sendRequestStatusEmail(inserted.id, "pending").catch((e) =>
+      console.error("Email notification error:", e)
+    );
   }
 
   const r: any = inserted || {};
@@ -308,16 +313,10 @@ export async function updateRequestStatus(
   id: string,
   status: RequestStatus
 ): Promise<boolean> {
-  const supabase = createClient();
-
   try {
-    const { error } = await supabase
-      .from("item_requests")
-      .update({ status })
-      .eq("id", id);
-
-    if (error) {
-      console.warn("Supabase updateRequestStatus error:", error);
+    const res = await updateRequestStatusAction(id, status);
+    if (!res.success) {
+      console.warn("updateRequestStatusAction failed:", res.error);
     }
   } catch (e) {
     console.warn("Supabase update error:", e);

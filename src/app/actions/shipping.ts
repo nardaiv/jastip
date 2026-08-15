@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { trackShipment, createFedExShipment } from "@/lib/fedex/client";
+import { sendRequestStatusEmail } from "@/app/actions/email";
 
 export interface CreateShipmentParams {
   tripId: string;
@@ -100,6 +101,10 @@ export async function createShipment(params: CreateShipmentParams) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", requestId);
+
+    sendRequestStatusEmail(requestId, "purchased").catch((e) =>
+      console.error("Email notification error:", e)
+    );
   }
 
   // 3. Trigger initial FedEx tracking query if tracking number is provided
@@ -606,6 +611,10 @@ export async function shipItemWithFedEx(itemRequestId: string) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", itemRequestId);
+
+  sendRequestStatusEmail(itemRequestId, "shipped").catch((e) =>
+    console.error("Email notification error:", e)
+  );
 
   if (updateError) {
     throw new Error(`Failed to update item request status: ${updateError.message}`);

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { Package, Clock, CheckCircle2, Truck, ArrowLeft, Image as ImageIcon } from "lucide-react";
 import { shipItemWithFedEx } from "@/app/actions/shipping";
+import { sendRequestStatusEmail, updateRequestStatusAction } from "@/app/actions/email";
 
 interface ItemRequest {
   id: string;
@@ -64,21 +65,15 @@ export default function TripRequestsPage() {
 
   const handleMarkAsPurchased = async (requestId: string) => {
     setProcessingId(requestId);
-    const supabase = createClient();
-    
-    const { error } = await supabase
-      .from("item_requests")
-      .update({ status: "purchased", updated_at: new Date().toISOString() })
-      .eq("id", requestId);
-
+    const res = await updateRequestStatusAction(requestId, "purchased");
     setProcessingId(null);
 
-    if (!error) {
+    if (res.success) {
       setRequests((prev) =>
         prev.map((req) => (req.id === requestId ? { ...req, status: "purchased" } : req))
       );
     } else {
-      alert("Gagal mengubah status ke purchased.");
+      alert(`Gagal mengubah status ke purchased: ${res.error}`);
     }
   };
 
