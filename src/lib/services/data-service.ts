@@ -1,219 +1,103 @@
 import { createClient } from "@/lib/supabase/client";
+import { Profile } from "@/types/database";
 import {
   BuyerRequest,
   SellerTrip,
   Payment,
   TrackingShipment,
-  Profile,
   RequestStatus,
-} from "@/types/database";
+} from "@/types/buyer";
 
-// Seed mock trips fallback
-export const INITIAL_SELLER_TRIPS: SellerTrip[] = [
-  {
-    id: 1,
-    seller_name: "Budi Santoso",
-    country: "🇯🇵 Jepang",
-    flag: "🇯🇵",
-    departure_date: "20 Agustus 2026",
-    return_date: "28 Agustus 2026",
-    status: "Aktif",
-  },
-  {
-    id: 2,
-    seller_name: "Siti Rahma",
-    country: "🇸🇬 Singapura",
-    flag: "🇸🇬",
-    departure_date: "22 Agustus 2026",
-    return_date: "25 Agustus 2026",
-    status: "Aktif",
-  },
-  {
-    id: 3,
-    seller_name: "Andi Wijaya",
-    country: "🇰🇷 Korea Selatan",
-    flag: "🇰🇷",
-    departure_date: "01 September 2026",
-    return_date: "10 September 2026",
-    status: "Mendatang",
-  },
-];
-
-// Seed mock requests fallback
-export const INITIAL_BUYER_REQUESTS: BuyerRequest[] = [
-  {
-    id: "REQ-000",
-    model: "Nintendo Switch OLED Joy-Con Red/Blue",
-    merk: "Nintendo",
-    kuantitas: 1,
-    seller_name: "Budi (Jasa Titip JP)",
-    country: "🇯🇵 Jepang",
-    status: "pending",
-    price: 4500000,
-    fee: 450000,
-    shipping_fee: 40000,
-    alamat: "Jl. Mawar No. 12, Jakarta",
-  },
-  {
-    id: "REQ-001",
-    model: "Matcha Powder Uji Premium 100g",
-    merk: "Ito En",
-    kuantitas: 2,
-    seller_name: "Budi (Jasa Titip JP)",
-    country: "🇯🇵 Jepang",
-    status: "accepted",
-    price: 265000,
-    fee: 26500,
-    shipping_fee: 20000,
-    alamat: "Jl. Sudirman Kav 25, Jakarta Pusat",
-  },
-  {
-    id: "REQ-002",
-    model: "Sony WH-1000XM5 Noise Canceling",
-    merk: "Sony",
-    kuantitas: 1,
-    seller_name: "Budi (Jasa Titip JP)",
-    country: "🇯🇵 Jepang",
-    status: "purchased",
-    price: 3296700,
-    fee: 329670,
-    shipping_fee: 35000,
-    alamat: "Jl. Gatot Subroto No. 88, Jakarta Selatan",
-  },
-  {
-    id: "REQ-003",
-    model: "MacBook Air M3 16/512GB",
-    merk: "Apple",
-    kuantitas: 1,
-    seller_name: "Siti (SG Express)",
-    country: "🇸🇬 Singapura",
-    status: "rejected",
-    price: 15999000,
-    fee: 1599900,
-    shipping_fee: 50000,
-    alamat: "Jl. Asia Afrika No. 10, Bandung",
-  },
-  {
-    id: "REQ-004",
-    model: "PlayStation 5 Slim Digital Edition",
-    merk: "Sony",
-    kuantitas: 1,
-    seller_name: "Andi (Korea Jastip)",
-    country: "🇰🇷 Korea Selatan",
-    status: "cancelled",
-    price: 7200000,
-    fee: 720000,
-    shipping_fee: 60000,
-    alamat: "Jl. Diponegoro No. 4, Surabaya",
-  },
-];
-
-// Fallback FedEx tracking data
-export const INITIAL_TRACKING_DATA: Record<string, TrackingShipment> = {
-  "REQ-002": {
-    id: 1,
-    request_id: "REQ-002",
-    courier: "FedEx Express (International Priority)",
-    resi: "7734 9182 0419",
-    service_type: "FedEx International Priority®",
-    estimated_delivery: "26 Agustus 2026, 18:00 WIB",
-    steps: [
-      { id: 1, title: "Pembayaran Dikonfirmasi", date: "18 Agt 2026, 14:30", status: "completed" },
-      { id: 2, title: "Shipment Picked Up (FedEx Tokyo)", date: "21 Agt 2026, 11:15", status: "completed" },
-      { id: 3, title: "In Transit - Flight Departed", date: "23 Agt 2026, 08:00", status: "active" },
-      { id: 4, title: "Out for Delivery (FedEx Indonesia)", date: "Estimasi 26 Agt 2026", status: "pending" },
-      { id: 5, title: "Delivered", date: "-", status: "pending" },
-    ],
-    timeline_logs: [
-      {
-        date: "23 Agt 2026 - 08:00 WIB",
-        location: "TOKYO - JAPAN",
-        note: "International shipment release - In transit to destination hub (FedEx Express Flight FX-519)",
-      },
-      {
-        date: "22 Agt 2026 - 19:45 WIB",
-        location: "NARITA HARBOR - JAPAN",
-        note: "At FedEx International Location / Clearance in progress",
-      },
-      {
-        date: "21 Agt 2026 - 11:15 WIB",
-        location: "GINZA, TOKYO - JAPAN",
-        note: "Picked up by FedEx Courier",
-      },
-      {
-        date: "18 Agt 2026 - 14:30 WIB",
-        location: "JAKARTA - INDONESIA",
-        note: "Shipment information sent to FedEx / Payment confirmed",
-      },
-    ],
-  },
-};
-
-const STORAGE_KEY_REQUESTS = "jastip_buyer_requests";
-const STORAGE_KEY_PAYMENTS = "jastip_payments";
-
-// Helper to get local requests cache
-function getLocalRequests(): BuyerRequest[] {
-  if (typeof window === "undefined") return INITIAL_BUYER_REQUESTS;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY_REQUESTS);
-    if (saved) return JSON.parse(saved);
-  } catch (e) {
-    console.warn("Failed to read local requests:", e);
-  }
-  localStorage.setItem(STORAGE_KEY_REQUESTS, JSON.stringify(INITIAL_BUYER_REQUESTS));
-  return INITIAL_BUYER_REQUESTS;
-}
-
-// Helper to save local requests cache
-function saveLocalRequests(requests: BuyerRequest[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY_REQUESTS, JSON.stringify(requests));
-  } catch (e) {
-    console.warn("Failed to save local requests:", e);
-  }
-}
+// Empty mock data arrays for Supabase compatibility
+export const INITIAL_SELLER_TRIPS: SellerTrip[] = [];
+export const INITIAL_BUYER_REQUESTS: BuyerRequest[] = [];
+export const INITIAL_TRACKING_DATA: Record<string, TrackingShipment> = {};
 
 /**
- * Fetch list of Seller Trips from Supabase with graceful fallback
+ * Fetch list of Seller Trips from Supabase
  */
 export async function fetchSellerTrips(): Promise<SellerTrip[]> {
   const supabase = createClient();
   try {
     const { data, error } = await supabase
-      .from("seller_trips")
-      .select("*")
-      .order("id", { ascending: true });
+      .from("trips")
+      .select("*, profiles:seller_id(full_name)")
+      .in("status", ["active", "upcoming"]);
 
-    if (!error && data && data.length > 0) {
-      return data as SellerTrip[];
+    if (!error && data) {
+      return (data || []).map((t: any) => {
+        let flag = "✈️";
+        const country = t.destination_country || "";
+        if (country.includes("Jepang") || country.includes("Japan")) flag = "🇯🇵";
+        else if (country.includes("Singapura") || country.includes("Singapore")) flag = "🇸🇬";
+        else if (country.includes("Korea")) flag = "🇰🇷";
+
+        return {
+          id: t.id,
+          seller_id: t.seller_id,
+          seller_name: t.profiles?.full_name || "Traveler",
+          country: t.destination_country || "Luar Negeri",
+          flag,
+          departure_date: new Date(t.start_date).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }),
+          return_date: new Date(t.end_date).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }),
+          status: t.status === "active" ? "Aktif" : "Mendatang",
+        };
+      });
     }
   } catch (e) {
     console.warn("Supabase fetch seller_trips error:", e);
   }
-  return INITIAL_SELLER_TRIPS;
+  return [];
 }
 
 /**
- * Fetch all Buyer Requests from Supabase with fallback to local cache
+ * Fetch all Buyer Requests from Supabase
  */
 export async function fetchBuyerRequests(): Promise<BuyerRequest[]> {
   const supabase = createClient();
   try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return [];
+
     const { data, error } = await supabase
-      .from("buyer_requests")
-      .select("*")
+      .from("item_requests")
+      .select(`
+        *,
+        trips (
+          destination_country,
+          profiles:seller_id (
+            full_name
+          )
+        )
+      `)
+      .eq("buyer_id", user.id)
       .order("created_at", { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      saveLocalRequests(data as BuyerRequest[]);
-      return data as BuyerRequest[];
+    if (!error && data) {
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        user_id: r.buyer_id,
+        model: r.item_name,
+        merk: "-",
+        kuantitas: r.quantity,
+        seller_name: r.trips?.profiles?.full_name || "Traveler",
+        country: r.trips?.destination_country || "Luar Negeri",
+        price: r.agreed_price || r.estimated_price || 0,
+        fee: r.jastip_fee || 0,
+        shipping_fee: r.shipping_fee || 0,
+        photo_url: r.image_url,
+        alamat: r.description || "",
+        status: r.status,
+        created_at: r.created_at,
+      }));
     }
   } catch (e) {
     console.warn("Supabase fetch buyer_requests error:", e);
   }
-  return getLocalRequests();
+  return [];
 }
 
 /**
@@ -223,20 +107,42 @@ export async function fetchBuyerRequestById(id: string): Promise<BuyerRequest | 
   const supabase = createClient();
   try {
     const { data, error } = await supabase
-      .from("buyer_requests")
-      .select("*")
+      .from("item_requests")
+      .select(`
+        *,
+        trips (
+          destination_country,
+          profiles:seller_id (
+            full_name
+          )
+        )
+      `)
       .eq("id", id)
       .single();
 
     if (!error && data) {
-      return data as BuyerRequest;
+      const r: any = data;
+      return {
+        id: r.id,
+        user_id: r.buyer_id,
+        model: r.item_name,
+        merk: "-",
+        kuantitas: r.quantity,
+        seller_name: r.trips?.profiles?.full_name || "Traveler",
+        country: r.trips?.destination_country || "Luar Negeri",
+        price: r.agreed_price || r.estimated_price || 0,
+        fee: r.jastip_fee || 0,
+        shipping_fee: r.shipping_fee || 0,
+        photo_url: r.image_url,
+        alamat: r.description || "",
+        status: r.status,
+        created_at: r.created_at,
+      };
     }
   } catch (e) {
     console.warn("Supabase fetch request by id error:", e);
   }
-
-  const local = getLocalRequests();
-  return local.find((r) => r.id === id) || null;
+  return null;
 }
 
 /**
@@ -249,8 +155,6 @@ export async function createBuyerRequest(
   }
 ): Promise<BuyerRequest> {
   const supabase = createClient();
-  const rawIdNum = Math.floor(100 + Math.random() * 900);
-  const newId = `REQ-${rawIdNum}`;
   const price = payload.price || 0;
   const fee = Math.round(price * 0.1); // 10% fee
   const shipping_fee = payload.shipping_fee || 35000;
@@ -263,39 +167,77 @@ export async function createBuyerRequest(
     if (user) userId = user.id;
   } catch {}
 
-  const newRequest: BuyerRequest = {
-    id: newId,
-    user_id: userId,
+  // Match active trip
+  let tripId: string | null = null;
+  try {
+    const { data: matchedTrip } = await supabase
+      .from("trips")
+      .select("id")
+      .eq("destination_country", payload.country)
+      .eq("status", "active")
+      .limit(1)
+      .single();
+    tripId = matchedTrip?.id || null;
+  } catch {}
+
+  if (!tripId) {
+    try {
+      const { data: anyTrip } = await supabase
+        .from("trips")
+        .select("id")
+        .eq("status", "active")
+        .limit(1)
+        .single();
+      tripId = anyTrip?.id || null;
+    } catch {}
+  }
+
+  const { data: inserted, error } = await supabase
+    .from("item_requests")
+    .insert({
+      trip_id: tripId,
+      buyer_id: userId,
+      item_name: `${payload.model} (${payload.merk})`,
+      description: payload.alamat,
+      quantity: payload.kuantitas,
+      estimated_price: price,
+      jastip_fee: fee,
+      shipping_fee: shipping_fee,
+      image_url: payload.photo_url,
+      status: "pending",
+    })
+    .select(`
+      *,
+      trips (
+        destination_country,
+        profiles:seller_id (
+          full_name
+        )
+      )
+    `)
+    .single();
+
+  if (error) {
+    console.warn("Supabase insert item_requests error:", error);
+  }
+
+  const r: any = inserted || {};
+  return {
+    id: r.id || `REQ-${Date.now()}`,
+    user_id: r.buyer_id || userId,
     model: payload.model,
     merk: payload.merk,
-    kuantitas: payload.kuantitas || 1,
-    seller_name: payload.seller_name,
-    country: payload.country,
+    kuantitas: payload.kuantitas,
+    seller_name: r.trips?.profiles?.full_name || payload.seller_name,
+    country: r.trips?.destination_country || payload.country,
     price,
     fee,
     shipping_fee,
-    photo_url: payload.photo_url || null,
+    photo_url: payload.photo_url,
     alamat: payload.alamat,
-    status: "pending",
-    created_at: new Date().toISOString(),
+    status: (r.status as RequestStatus) || "pending",
+    created_at: r.created_at || new Date().toISOString(),
   };
-
-  // Try Supabase insert
-  try {
-    const { error } = await supabase.from("buyer_requests").insert([newRequest]);
-    if (error) {
-      console.warn("Supabase insert buyer_requests error:", error);
-    }
-  } catch (e) {
-    console.warn("Failed Supabase request insert:", e);
-  }
-
-  // Update local cache
-  const existing = getLocalRequests();
-  const updated = [newRequest, ...existing.filter((r) => r.id !== newId)];
-  saveLocalRequests(updated);
-
-  return newRequest;
 }
 
 /**
@@ -309,7 +251,7 @@ export async function updateRequestStatus(
 
   try {
     const { error } = await supabase
-      .from("buyer_requests")
+      .from("item_requests")
       .update({ status })
       .eq("id", id);
 
@@ -320,12 +262,6 @@ export async function updateRequestStatus(
     console.warn("Supabase update error:", e);
   }
 
-  // Update local cache
-  const existing = getLocalRequests();
-  const updated = existing.map((item) =>
-    item.id === id ? { ...item, status } : item
-  );
-  saveLocalRequests(updated);
   return true;
 }
 
@@ -387,90 +323,75 @@ export async function submitBuyerPayment(params: {
     if (user) userId = user.id;
   } catch {}
 
-  const paymentData: Payment = {
-    id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `PAY-${Date.now()}`,
+  // Update request status to paid
+  await updateRequestStatus(params.request_id, "paid");
+
+  return {
+    id: `PAY-${Date.now()}`,
     request_id: params.request_id,
     user_id: userId,
     bank_account: params.bank_account,
     proof_url: finalProofUrl,
     amount: params.amount,
-    created_at: new Date().toISOString(),
   };
-
-  try {
-    await supabase.from("payments").insert([paymentData]);
-  } catch (e) {
-    console.warn("Supabase payments insert error:", e);
-  }
-
-  // Update request status to purchased or processing
-  await updateRequestStatus(params.request_id, "purchased");
-
-  return paymentData;
 }
 
 /**
  * Fetch FedEx Tracking Data for a request
  */
-export async function fetchTrackingData(requestId: string): Promise<TrackingShipment> {
+export async function fetchTrackingData(requestId: string): Promise<TrackingShipment | null> {
   const supabase = createClient();
 
   try {
-    const { data, error } = await supabase
-      .from("tracking_shipments")
-      .select("*")
-      .eq("request_id", requestId)
-      .single();
+    // 1. Get shipment_id from shipment_items
+    const { data: item, error: err1 } = await supabase
+      .from("shipment_items")
+      .select("shipment_id")
+      .eq("item_request_id", requestId)
+      .maybeSingle();
 
-    if (!error && data) {
-      return data as TrackingShipment;
+    if (!err1 && item?.shipment_id) {
+      // 2. Query shipments details
+      const { data: shipment, error: err2 } = await supabase
+        .from("shipments")
+        .select("*")
+        .eq("id", item.shipment_id)
+        .single();
+
+      if (!err2 && shipment) {
+        // 3. Query tracking events
+        const { data: events } = await supabase
+          .from("shipment_tracking_events")
+          .select("*")
+          .eq("shipment_id", shipment.id)
+          .order("created_at", { ascending: false });
+
+        return {
+          id: 1,
+          request_id: requestId,
+          courier: "FedEx Express",
+          resi: shipment.fedex_tracking_number || "Pending Courier Assignment",
+          service_type: "FedEx International Priority®",
+          estimated_delivery: "Estimasi Pengiriman Aktif",
+          steps: (events || []).map((e, index) => ({
+            id: index + 1,
+            title: e.status_details || "Update Transit",
+            date: new Date(e.created_at).toLocaleDateString("id-ID"),
+            status: index === 0 ? "active" : "completed",
+          })),
+          timeline_logs: (events || []).map((e) => ({
+            date: new Date(e.created_at).toLocaleString("id-ID"),
+            location: e.location || "TRANSIT HUB",
+            note: e.status_details || "Shipment in transit",
+          })),
+        };
+      }
     }
   } catch (e) {
-    console.warn("Supabase tracking_shipments fetch error:", e);
+    console.warn("Supabase fetch tracking error:", e);
   }
 
-  if (INITIAL_TRACKING_DATA[requestId]) {
-    return INITIAL_TRACKING_DATA[requestId];
-  }
-
-  // Generate dynamic fallback tracking shipment for this ID
-  return {
-    id: 99,
-    request_id: requestId,
-    courier: "FedEx Express (International Priority)",
-    resi: "7734 9182 0419",
-    service_type: "FedEx International Priority®",
-    estimated_delivery: "26 Agustus 2026, 18:00 WIB",
-    steps: [
-      { id: 1, title: "Pembayaran Dikonfirmasi", date: "18 Agt 2026, 14:30", status: "completed" },
-      { id: 2, title: "Shipment Picked Up (FedEx Tokyo)", date: "21 Agt 2026, 11:15", status: "completed" },
-      { id: 3, title: "In Transit - Flight Departed", date: "23 Agt 2026, 08:00", status: "active" },
-      { id: 4, title: "Out for Delivery (FedEx Indonesia)", date: "Estimasi 26 Agt 2026", status: "pending" },
-      { id: 5, title: "Delivered", date: "-", status: "pending" },
-    ],
-    timeline_logs: [
-      {
-        date: "23 Agt 2026 - 08:00 WIB",
-        location: "TOKYO - JAPAN",
-        note: "International shipment release - In transit to destination hub (FedEx Express Flight FX-519)",
-      },
-      {
-        date: "22 Agt 2026 - 19:45 WIB",
-        location: "NARITA HARBOR - JAPAN",
-        note: "At FedEx International Location / Clearance in progress",
-      },
-      {
-        date: "21 Agt 2026 - 11:15 WIB",
-        location: "GINZA, TOKYO - JAPAN",
-        note: "Picked up by FedEx Courier",
-      },
-      {
-        date: "18 Agt 2026 - 14:30 WIB",
-        location: "JAKARTA - INDONESIA",
-        note: "Shipment information sent to FedEx / Payment confirmed",
-      },
-    ],
-  };
+  return null;
 }
 
 /**

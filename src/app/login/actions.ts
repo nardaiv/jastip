@@ -24,6 +24,12 @@ export async function login(formData: FormData) {
     redirect("/login?error=Invalid email or password");
   }
 
+  const { data } = await supabase.from("profiles").select('role').eq('email', email).single();
+  if (data?.role === "admin") {
+    revalidatePath("/", "layout");
+    redirect("/admin");
+  }
+
   revalidatePath("/", "layout");
   redirect("/dashboard");
 }
