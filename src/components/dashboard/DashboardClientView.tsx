@@ -263,7 +263,7 @@ export function DashboardClientView({
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Ringkasan omset dan pesanan titipan Anda.
+            {userRole === "seller" ? "Ringkasan omset dan pesanan titipan Anda." : "Ringkasan pesanan titipan Anda."}
           </p>
         </div>
 
@@ -297,32 +297,36 @@ export function DashboardClientView({
       {activeTab === "overview" ? (
         <div className="space-y-6">
           {/* 1. KPI Stats Cards (3 Columns) */}
-          <DashboardStatsCards
-            totalRevenue={stats.totalRevenue}
-            totalProfit={stats.totalProfit}
-            totalOrders={stats.totalOrders}
-            completedOrders={stats.completedOrders}
-            pendingOrders={stats.pendingOrders}
-            profitMargin={stats.profitMargin}
-          />
+          {userRole !== "admin" && userRole !== "buyer" && (
+            <DashboardStatsCards
+              totalRevenue={stats.totalRevenue}
+              totalProfit={stats.totalProfit}
+              totalOrders={stats.totalOrders}
+              completedOrders={stats.completedOrders}
+              pendingOrders={stats.pendingOrders}
+              profitMargin={stats.profitMargin}
+            />
+          )}
 
           {/* 2. Charts Row (Sales & Order Distribution) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            <div className="lg:col-span-8 flex flex-col">
-              <SalesAnalyticsChart
-                dailyData={dailyData}
-                weeklyData={weeklyData}
-                monthlyData={monthlyData}
-              />
-            </div>
+          {userRole !== "admin" && userRole !== "buyer" && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              <div className="lg:col-span-8 flex flex-col">
+                <SalesAnalyticsChart
+                  dailyData={dailyData}
+                  weeklyData={weeklyData}
+                  monthlyData={monthlyData}
+                />
+              </div>
 
-            <div className="lg:col-span-4 flex flex-col">
-              <OrderDistributionChart
-                data={distributionData}
-                totalOrders={stats.totalOrders}
-              />
+              <div className="lg:col-span-4 flex flex-col">
+                <OrderDistributionChart
+                  data={distributionData}
+                  totalOrders={stats.totalOrders}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 3. Recent Orders Full Width */}
           <RecentOrdersSection

@@ -143,9 +143,11 @@ export function RecentOrdersSection({
                   <div className="text-xs font-bold text-foreground">
                     Rp {(order.total_price || 0).toLocaleString("id-ID")}
                   </div>
-                  <div className="text-[11px] text-emerald-700 dark:text-primary font-medium">
-                    +Fee Rp {(order.jastip_fee || 0).toLocaleString("id-ID")}
-                  </div>
+                  {userRole === "seller" && (
+                    <div className="text-[11px] text-emerald-700 dark:text-primary font-medium">
+                      +Fee Rp {(order.jastip_fee || 0).toLocaleString("id-ID")}
+                    </div>
+                  )}
                 </div>
 
                 <span
