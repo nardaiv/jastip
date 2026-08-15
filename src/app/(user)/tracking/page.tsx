@@ -86,8 +86,8 @@ function TrackingContent() {
     );
   }
 
-  const price = requestItem?.price || 3296700;
-  const fee = requestItem?.fee || Math.round(price * 0.1);
+  const price = requestItem?.estimated_price || 3296700;
+  const fee = requestItem?.jastip_fee || Math.round(price * 0.1);
   const shippingFee = requestItem?.shipping_fee || 35000;
   const totalBiaya = price + fee + shippingFee;
 
@@ -116,7 +116,7 @@ function TrackingContent() {
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-3 tracking-tight">
-            {requestItem?.model || "Sony WH-1000XM5 Noise Canceling"}
+            {requestItem?.item_name || "Sony WH-1000XM5 Noise Canceling"}
           </h1>
           <p className="text-sm text-slate-600 mt-1">
             Seller: <span className="font-bold text-slate-900">{requestItem?.seller_name || "Budi (Jasa Titip JP)"}</span> ({requestItem?.country || "🇯🇵 Jepang"})

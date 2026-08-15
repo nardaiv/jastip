@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { Package, Clock, CheckCircle2, Truck, ArrowLeft, Image as ImageIcon } from "lucide-react";
+import { shipItemWithFedEx } from "@/app/actions/shipping";
 
 interface ItemRequest {
   id: string;
@@ -61,21 +62,41 @@ export default function TripRequestsPage() {
     setLoading(false);
   }
 
-  const handleKirim = async (requestId: string) => {
+  const handleMarkAsPurchased = async (requestId: string) => {
     setProcessingId(requestId);
     const supabase = createClient();
     
     const { error } = await supabase
       .from("item_requests")
-      .update({ status: "shipped" })
+      .update({ status: "purchased", updated_at: new Date().toISOString() })
       .eq("id", requestId);
 
     setProcessingId(null);
 
     if (!error) {
-      setRequests((prev) => prev.filter((req) => req.id !== requestId));
+      setRequests((prev) =>
+        prev.map((req) => (req.id === requestId ? { ...req, status: "purchased" } : req))
+      );
     } else {
-      alert("Gagal mengubah status pengiriman.");
+      alert("Gagal mengubah status ke purchased.");
+    }
+  };
+
+  const handleShipWithFedEx = async (requestId: string) => {
+    setProcessingId(requestId);
+    try {
+      const res = await shipItemWithFedEx(requestId);
+      if (res.success) {
+        alert(`Pengiriman FedEx berhasil diproses! Resi: ${res.trackingNumber}`);
+        setRequests((prev) => prev.filter((req) => req.id !== requestId));
+      } else {
+        alert("Gagal memproses pengiriman FedEx.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Terjadi kesalahan saat memproses FedEx.");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -123,9 +144,10 @@ export default function TripRequestsPage() {
         ) : (
           <div className="grid gap-5">
             {requests.map((req) => {
-              const isPurchased = req.status === "purchased";
+              const isPending = req.status === "pending";
+              const isAccepted = req.status === "accepted";
               const isPaid = req.status === "paid";
-              const isPendingOrAccepted = req.status === "pending" || req.status === "accepted";
+              const isPurchased = req.status === "purchased";
               
               const buyerInfo = req.profiles?.phone_number || req.profiles?.full_name || "Unknown";
 
@@ -167,9 +189,15 @@ export default function TripRequestsPage() {
                   {/* Status & Aksi Kanan */}
                   <div className="flex flex-col items-end justify-between gap-4 w-full md:w-auto h-full self-stretch md:self-auto mt-2 md:mt-0">
                     
-                    {isPendingOrAccepted && (
+                    {isPending && (
                       <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full text-blue-500 bg-blue-50/80 dark:bg-blue-500/10">
-                        {req.status}
+                        PENDING
+                      </span>
+                    )}
+
+                    {isAccepted && (
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full text-blue-600 bg-blue-50/80 flex items-center gap-1.5 dark:bg-blue-500/10">
+                        <Clock className="w-3 h-3" /> ACCEPTED
                       </span>
                     )}
                     
@@ -186,28 +214,8 @@ export default function TripRequestsPage() {
                     )}
 
                     {/* Tombol Aksi */}
-                    <div className="mt-auto pt-2">
-                      {isPurchased && (
-                        <Button
-                          disabled
-                          className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-[#dcfce7] text-emerald-700 opacity-80 cursor-not-allowed dark:bg-emerald-900/40 dark:text-emerald-400 border-none ring-0"
-                        >
-                          <Truck className="w-4 h-4" /> Menunggu Pembayaran
-                        </Button>
-                      )}
-
-                      {isPaid && (
-                        <Button
-                          onClick={() => handleKirim(req.id)}
-                          disabled={processingId === req.id}
-                          className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm border-none ring-0"
-                        >
-                          <Truck className="w-4 h-4" /> 
-                          {processingId === req.id ? "Memproses..." : "Kirim Barang"}
-                        </Button>
-                      )}
-
-                      {isPendingOrAccepted && (
+                    <div className="mt-auto pt-2 w-full md:w-auto">
+                      {isPending && (
                         <Link href={`/seller/trip/${tripId}/requests/${req.id}/pricing`} className="w-full md:w-auto">
                           <Button
                             variant="outline"
@@ -216,6 +224,37 @@ export default function TripRequestsPage() {
                             Set Price
                           </Button>
                         </Link>
+                      )}
+
+                      {isAccepted && (
+                        <Button
+                          disabled
+                          className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-blue-50 text-blue-700 opacity-80 cursor-not-allowed border-none ring-0"
+                        >
+                          <Clock className="w-4 h-4" /> Menunggu Pembayaran Buyer
+                        </Button>
+                      )}
+
+                      {isPaid && (
+                        <Button
+                          onClick={() => handleMarkAsPurchased(req.id)}
+                          disabled={processingId === req.id}
+                          className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 shadow-sm border-none ring-0"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          {processingId === req.id ? "Memproses..." : "Tandai Sudah Dibeli"}
+                        </Button>
+                      )}
+
+                      {isPurchased && (
+                        <Button
+                          onClick={() => handleShipWithFedEx(req.id)}
+                          disabled={processingId === req.id}
+                          className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm border-none ring-0"
+                        >
+                          <Truck className="w-4 h-4" /> 
+                          {processingId === req.id ? "Memproses..." : "Kirim dengan FedEx"}
+                        </Button>
                       )}
                     </div>
                   </div>

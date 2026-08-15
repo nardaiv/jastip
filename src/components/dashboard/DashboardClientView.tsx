@@ -8,6 +8,7 @@ import { RecentOrdersSection, RecentOrderItem } from "./RecentOrdersSection";
 import { DashboardProfileGrid } from "@/components/DashboardProfileGrid";
 import { ProfileForm } from "@/components/ProfileForm";
 import { LayoutDashboard, Settings } from "lucide-react";
+import { DashboardClient } from "@/components/DashboardClient";
 
 export interface DashboardRawOrder {
   id: string;
@@ -25,19 +26,23 @@ export interface DashboardRawOrder {
 }
 
 interface DashboardClientViewProps {
+  userId: string;
   userRole: string;
   userEmail: string;
   userName: string;
   orders: DashboardRawOrder[];
   activeTripsCount: number;
+  initialAddresses: any[];
 }
 
 export function DashboardClientView({
+  userId,
   userRole,
   userEmail,
   userName,
   orders,
   activeTripsCount,
+  initialAddresses,
 }: DashboardClientViewProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "settings">("overview");
 
@@ -336,22 +341,12 @@ export function DashboardClientView({
         </div>
       ) : (
         /* Settings & Profile Tab */
-        <div className="max-w-3xl mx-auto space-y-6 pt-2">
-          <div className="bg-white dark:bg-zinc-900 p-8 space-y-6 rounded-3xl shadow-xs border border-black/[0.04] dark:border-white/[0.05]">
-            <div>
-              <h2 className="text-xl font-bold text-foreground tracking-tight">
-                Pengaturan Profil & Akun
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Kelola informasi identitas dan preferensi akun Anda.
-              </p>
-            </div>
-
-            <div className="h-px bg-muted/40" />
-
-            <DashboardProfileGrid fallbackEmail={userEmail} />
-            <ProfileForm />
-          </div>
+        <div className="max-w-3xl mx-auto pt-2">
+          <DashboardClient
+            userId={userId}
+            userEmail={userEmail}
+            initialAddresses={initialAddresses}
+          />
         </div>
       )}
 

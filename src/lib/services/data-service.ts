@@ -51,6 +51,70 @@ export async function fetchSellerTrips(): Promise<SellerTrip[]> {
 }
 
 /**
+ * Fetch a single seller trip by its ID from Supabase
+ */
+export async function fetchTripById(tripId: string): Promise<SellerTrip | null> {
+  const supabase = createClient();
+  try {
+    const { data, error } = await supabase
+      .from("trips")
+      .select("*, profiles:seller_id(full_name)")
+      .eq("id", tripId)
+      .single();
+
+    if (!error && data) {
+      const t = data;
+      let flag = "✈️";
+      const country = t.destination_country || "";
+      if (country.includes("Jepang") || country.includes("Japan")) flag = "🇯🇵";
+      else if (country.includes("Singapura") || country.includes("Singapore")) flag = "🇸🇬";
+      else if (country.includes("Korea")) flag = "🇰🇷";
+
+      return {
+        id: t.id,
+        seller_id: t.seller_id,
+        seller_name: t.profiles?.full_name || "Traveler",
+        country: t.destination_country || "Luar Negeri",
+        flag,
+        departure_date: new Date(t.start_date).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }),
+        return_date: new Date(t.end_date).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }),
+        status: t.status === "active" ? "Aktif" : "Mendatang",
+      };
+    }
+  } catch (e) {
+    console.warn("Supabase fetch trip by id error:", e);
+  }
+  return null;
+}
+
+/**
+ * Fetch shipping addresses for current user
+ */
+export async function fetchUserShippingAddresses(): Promise<any[]> {
+  const supabase = createClient();
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("shipping_addresses")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: true });
+
+    if (!error && data) {
+      return data;
+    }
+  } catch (e) {
+    console.warn("Supabase fetch shipping addresses error:", e);
+  }
+  return [];
+}
+
+/**
  * Fetch all Buyer Requests from Supabase
  */
 export async function fetchBuyerRequests(): Promise<BuyerRequest[]> {
@@ -80,16 +144,22 @@ export async function fetchBuyerRequests(): Promise<BuyerRequest[]> {
       return (data || []).map((r: any) => ({
         id: r.id,
         user_id: r.buyer_id,
-        model: r.item_name,
-        merk: "-",
-        kuantitas: r.quantity,
+        trip_id: r.trip_id,
+        item_name: r.item_name,
+        description: r.description,
+        quantity: r.quantity,
         seller_name: r.trips?.profiles?.full_name || "Traveler",
         country: r.trips?.destination_country || "Luar Negeri",
-        price: r.agreed_price || r.estimated_price || 0,
-        fee: r.jastip_fee || 0,
+        estimated_price: r.estimated_price || 0,
+        currency: r.currency || "IDR",
+        jastip_fee: r.jastip_fee || 0,
         shipping_fee: r.shipping_fee || 0,
-        photo_url: r.image_url,
-        alamat: r.description || "",
+        total_price: r.total_price || 0,
+        reference_link: r.reference_link,
+        image_url: r.image_url,
+        shipping_address_id: r.shipping_address_id,
+        weight_value: r.weight_value,
+        weight_unit: r.weight_unit,
         status: r.status,
         created_at: r.created_at,
       }));
@@ -125,16 +195,22 @@ export async function fetchBuyerRequestById(id: string): Promise<BuyerRequest | 
       return {
         id: r.id,
         user_id: r.buyer_id,
-        model: r.item_name,
-        merk: "-",
-        kuantitas: r.quantity,
+        trip_id: r.trip_id,
+        item_name: r.item_name,
+        description: r.description,
+        quantity: r.quantity,
         seller_name: r.trips?.profiles?.full_name || "Traveler",
         country: r.trips?.destination_country || "Luar Negeri",
-        price: r.agreed_price || r.estimated_price || 0,
-        fee: r.jastip_fee || 0,
+        estimated_price: r.estimated_price || 0,
+        currency: r.currency || "IDR",
+        jastip_fee: r.jastip_fee || 0,
         shipping_fee: r.shipping_fee || 0,
-        photo_url: r.image_url,
-        alamat: r.description || "",
+        total_price: r.total_price || 0,
+        reference_link: r.reference_link,
+        image_url: r.image_url,
+        shipping_address_id: r.shipping_address_id,
+        weight_value: r.weight_value,
+        weight_unit: r.weight_unit,
         status: r.status,
         created_at: r.created_at,
       };
@@ -149,15 +225,13 @@ export async function fetchBuyerRequestById(id: string): Promise<BuyerRequest | 
  * Create a new Buyer Request
  */
 export async function createBuyerRequest(
-  payload: Omit<BuyerRequest, "id" | "fee" | "status" | "created_at"> & {
-    price?: number;
-    shipping_fee?: number;
-  }
+  payload: Omit<BuyerRequest, "id" | "seller_name" | "country" | "status" | "created_at">
 ): Promise<BuyerRequest> {
   const supabase = createClient();
-  const price = payload.price || 0;
-  const fee = Math.round(price * 0.1); // 10% fee
-  const shipping_fee = payload.shipping_fee || 35000;
+  const estimated_price = payload.estimated_price || 0;
+  const jastip_fee = Math.round(estimated_price * 0.1); // 10% fee
+  const shipping_fee = payload.shipping_fee || 0;
+  const total_price = estimated_price * payload.quantity + jastip_fee + shipping_fee;
 
   let userId: string | null = null;
   try {
@@ -167,43 +241,24 @@ export async function createBuyerRequest(
     if (user) userId = user.id;
   } catch {}
 
-  // Match active trip
-  let tripId: string | null = null;
-  try {
-    const { data: matchedTrip } = await supabase
-      .from("trips")
-      .select("id")
-      .eq("destination_country", payload.country)
-      .eq("status", "active")
-      .limit(1)
-      .single();
-    tripId = matchedTrip?.id || null;
-  } catch {}
-
-  if (!tripId) {
-    try {
-      const { data: anyTrip } = await supabase
-        .from("trips")
-        .select("id")
-        .eq("status", "active")
-        .limit(1)
-        .single();
-      tripId = anyTrip?.id || null;
-    } catch {}
-  }
-
   const { data: inserted, error } = await supabase
     .from("item_requests")
     .insert({
-      trip_id: tripId,
+      trip_id: payload.trip_id,
       buyer_id: userId,
-      item_name: `${payload.model} (${payload.merk})`,
-      description: payload.alamat,
-      quantity: payload.kuantitas,
-      estimated_price: price,
-      jastip_fee: fee,
+      item_name: payload.item_name,
+      description: payload.description,
+      quantity: payload.quantity,
+      estimated_price: estimated_price,
+      currency: payload.currency || "IDR",
+      jastip_fee: jastip_fee,
       shipping_fee: shipping_fee,
-      image_url: payload.photo_url,
+      total_price: total_price,
+      reference_link: payload.reference_link,
+      image_url: payload.image_url,
+      shipping_address_id: payload.shipping_address_id || null,
+      weight_value: payload.weight_value || null,
+      weight_unit: payload.weight_unit || "KG",
       status: "pending",
     })
     .select(`
@@ -225,16 +280,22 @@ export async function createBuyerRequest(
   return {
     id: r.id || `REQ-${Date.now()}`,
     user_id: r.buyer_id || userId,
-    model: payload.model,
-    merk: payload.merk,
-    kuantitas: payload.kuantitas,
-    seller_name: r.trips?.profiles?.full_name || payload.seller_name,
-    country: r.trips?.destination_country || payload.country,
-    price,
-    fee,
-    shipping_fee,
-    photo_url: payload.photo_url,
-    alamat: payload.alamat,
+    trip_id: r.trip_id || payload.trip_id,
+    item_name: r.item_name || payload.item_name,
+    description: r.description || payload.description,
+    quantity: r.quantity || payload.quantity,
+    seller_name: r.trips?.profiles?.full_name || "Traveler",
+    country: r.trips?.destination_country || "Luar Negeri",
+    estimated_price: r.estimated_price !== undefined ? r.estimated_price : estimated_price,
+    currency: r.currency || payload.currency || "IDR",
+    jastip_fee: r.jastip_fee !== undefined ? r.jastip_fee : jastip_fee,
+    shipping_fee: r.shipping_fee !== undefined ? r.shipping_fee : shipping_fee,
+    total_price: r.total_price !== undefined ? r.total_price : total_price,
+    reference_link: r.reference_link || payload.reference_link,
+    image_url: r.image_url || payload.image_url,
+    shipping_address_id: r.shipping_address_id || payload.shipping_address_id,
+    weight_value: r.weight_value || payload.weight_value,
+    weight_unit: r.weight_unit || payload.weight_unit,
     status: (r.status as RequestStatus) || "pending",
     created_at: r.created_at || new Date().toISOString(),
   };
@@ -270,8 +331,17 @@ export async function updateRequestStatus(
  */
 export async function uploadToStorage(
   file: File,
-  bucket: "avatars" | "request-photos" | "payment-proofs"
+  bucket: "avatars" | "request-photos" | "payment-proofs" | "item-requests"
 ): Promise<string> {
+  // Validate that the file is an image
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Tipe file tidak valid. Harap unggah file gambar saja.");
+  }
+  // Validate that the file size is <= 5MB (5 * 1024 * 1024 bytes)
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Ukuran file melebihi batas 5 MB.");
+  }
+
   const supabase = createClient();
   const fileExt = file.name.split(".").pop();
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;

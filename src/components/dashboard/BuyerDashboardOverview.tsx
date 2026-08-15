@@ -82,7 +82,7 @@ export function BuyerDashboardOverview() {
         </div>
         <div className="flex flex-wrap gap-3 shrink-0">
           <Link
-            href="/request"
+            href="#trips"
             className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-brand-green hover:bg-[#43A047] active:scale-95 font-bold rounded-2xl text-white transition-all shadow-md text-base cursor-pointer"
           >
             <svg
@@ -135,7 +135,7 @@ export function BuyerDashboardOverview() {
               Kamu belum memiliki request barang titipan. Mulai buat pesanan pertamamu sekarang!
             </p>
             <Link
-              href="/request"
+              href="#trips"
               className="inline-block px-6 py-2.5 bg-brand-green text-white font-semibold rounded-xl text-sm shadow-sm hover:opacity-90 transition-all"
             >
               + Buat Request Pertama
@@ -144,7 +144,9 @@ export function BuyerDashboardOverview() {
         ) : (
           <div className="space-y-5">
             {requests.map((item) => {
-              const totalBiaya = (item.price || 0) + (item.fee || 0) + (item.shipping_fee || 0);
+              const priceVal = item.estimated_price || 0;
+              const quantityVal = item.quantity || 1;
+              const totalBiaya = priceVal * quantityVal + (item.jastip_fee || 0) + (item.shipping_fee || 0);
               
               return (
                 <div
@@ -154,10 +156,10 @@ export function BuyerDashboardOverview() {
                   {/* Informasi Barang */}
                   <div className="flex items-start gap-4 sm:gap-5 w-full lg:w-auto">
                     <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-mono text-xs border border-slate-200 shrink-0 overflow-hidden relative">
-                      {item.photo_url ? (
+                      {item.image_url ? (
                         <img
-                          src={item.photo_url}
-                          alt={item.model}
+                          src={item.image_url}
+                          alt={item.item_name}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -168,19 +170,20 @@ export function BuyerDashboardOverview() {
                     <div className="grow">
                       <div className="flex flex-wrap items-center gap-2 mb-1.5">
                         <h3 className="text-lg md:text-xl font-bold text-slate-950 tracking-tight">
-                          {item.model}
+                          {item.item_name}
                         </h3>
                         <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-                          x{item.kuantitas}
+                          x{item.quantity}
                         </span>
                       </div>
-
-                      <p className="text-sm text-slate-600">
-                        Merk: <span className="text-slate-900 font-semibold">{item.merk}</span>
-                      </p>
                       <p className="text-xs text-slate-400 font-mono mt-0.5">
                         ID: {item.id}
                       </p>
+                      {item.description && (
+                        <p className="text-xs text-slate-500 mt-1 line-clamp-2 max-w-md">
+                          Catatan: {item.description}
+                        </p>
+                      )}
 
                       <div className="grow mt-2.5 text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1">
                         <p>
@@ -235,7 +238,7 @@ export function BuyerDashboardOverview() {
                         {formatRupiah(totalBiaya)}
                       </p>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Barang: {formatRupiah(item.price || 0)} • Fee: {formatRupiah(item.fee || 0)} • Ongkir: {formatRupiah(item.shipping_fee || 0)}
+                        Barang: {formatRupiah(item.estimated_price || 0)} • Fee: {formatRupiah(item.jastip_fee || 0)} • Ongkir: {formatRupiah(item.shipping_fee || 0)}
                       </p>
                     </div>
 
@@ -297,7 +300,7 @@ export function BuyerDashboardOverview() {
       </div>
 
       {/* Jadwal Trip Seller Per Negara */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div id="trips" className="bg-white border border-slate-200/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
           <div>
             <h2 className="text-2xl font-bold text-slate-950 tracking-tight">
@@ -354,7 +357,7 @@ export function BuyerDashboardOverview() {
               </div>
 
               <Link
-                href={`/request?seller=${encodeURIComponent(trip.seller_name)}&country=${encodeURIComponent(trip.country)}`}
+                href={`/request?trip_id=${trip.id}`}
                 className="mt-6 w-full py-3 bg-white hover:bg-emerald-50 text-brand-green border border-emerald-300 text-center rounded-xl text-sm font-bold transition-all shadow-xs inline-block active:scale-95 cursor-pointer"
               >
                 Request ke Seller Ini →

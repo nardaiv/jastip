@@ -4,24 +4,40 @@ import { useState, ChangeEvent, FormEvent, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import { createBuyerRequest, uploadToStorage, fetchSellerTrips } from "@/lib/services/data-service";
+import {
+  createBuyerRequest,
+  uploadToStorage,
+  fetchTripById,
+  fetchUserShippingAddresses,
+} from "@/lib/services/data-service";
 import { SellerTrip } from "@/types/buyer";
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Phone, PlaneTakeoff, PlaneLanding, Plane, AlertTriangle, Check } from "lucide-react";
 
 function RequestFormContent() {
   const searchParams = useSearchParams();
-  const initialSeller = searchParams.get("seller") || "";
-  const initialCountry = searchParams.get("country") || "";
+  const tripId = searchParams.get("trip_id") || "";
 
-  const [sellerTrips, setSellerTrips] = useState<SellerTrip[]>([]);
+  const [selectedTrip, setSelectedTrip] = useState<SellerTrip | null>(null);
+  const [shippingAddresses, setShippingAddresses] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [formData, setFormData] = useState({
-    model: "",
-    merk: "",
-    kuantitas: 1,
-    seller_name: initialSeller,
-    country: initialCountry,
-    alamat: "",
-    price: 0,
-    shipping_fee: 35000,
+    trip_id: tripId,
+    item_name: "",
+    quantity: 1,
+    estimated_price: 0,
+    currency: "IDR",
+    description: "",
+    reference_link: "",
+    shipping_address_id: "",
+    weight_value: 0,
+    weight_unit: "KG",
   });
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -31,19 +47,47 @@ function RequestFormContent() {
   const [submittedId, setSubmittedId] = useState<string>("");
 
   useEffect(() => {
-    async function loadTrips() {
-      const trips = await fetchSellerTrips();
-      setSellerTrips(trips);
-      if (!formData.seller_name && trips.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          seller_name: initialSeller || trips[0].seller_name,
-          country: initialCountry || trips[0].country,
-        }));
+    async function loadData() {
+      if (!tripId) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const [trip, addresses] = await Promise.all([
+          fetchTripById(tripId),
+          fetchUserShippingAddresses(),
+        ]);
+
+        if (trip) {
+          setSelectedTrip(trip);
+          // Pre-select default address if exists
+          const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
+          const initialAddrId = defaultAddr?.id || "";
+
+          setShippingAddresses(addresses);
+          setFormData((prev) => ({
+            ...prev,
+            trip_id: tripId,
+            shipping_address_id: initialAddrId,
+            currency: trip.country?.includes("Jepang") || trip.country?.includes("Japan")
+              ? "JPY"
+              : trip.country?.includes("Singapura") || trip.country?.includes("Singapore")
+              ? "SGD"
+              : trip.country?.includes("Korea")
+              ? "KRW"
+              : "IDR",
+          }));
+        }
+      } catch (err) {
+        console.error("Error loading request form data:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
-    loadTrips();
-  }, [initialSeller, initialCountry]);
+    loadData();
+  }, [tripId]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -52,19 +96,23 @@ function RequestFormContent() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSellerSelect = (e: ChangeEvent<HTMLSelectElement>) => {
-    const selectedSeller = e.target.value;
-    const matchedTrip = sellerTrips.find((t) => t.seller_name === selectedSeller);
-    setFormData((prev) => ({
-      ...prev,
-      seller_name: selectedSeller,
-      country: matchedTrip ? matchedTrip.country : prev.country,
-    }));
-  };
-
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        alert("Harap pilih file gambar saja (JPG, PNG, WebP, dll.).");
+        e.target.value = "";
+        setPhotoFile(null);
+        setPreviewUrl(null);
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran file tidak boleh melebihi 5 MB.");
+        e.target.value = "";
+        setPhotoFile(null);
+        setPreviewUrl(null);
+        return;
+      }
       setPhotoFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
@@ -72,8 +120,8 @@ function RequestFormContent() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!formData.model || !formData.merk || !formData.alamat) {
-      alert("Mohon lengkapi semua field yang berbintang wajib (*).");
+    if (!formData.trip_id || !formData.item_name || !formData.shipping_address_id) {
+      alert("Mohon lengkapi semua field yang wajib (*).");
       return;
     }
 
@@ -81,19 +129,21 @@ function RequestFormContent() {
     try {
       let photoUrl: string | null = null;
       if (photoFile) {
-        photoUrl = await uploadToStorage(photoFile, "request-photos");
+        photoUrl = await uploadToStorage(photoFile, "item-requests");
       }
 
       const created = await createBuyerRequest({
-        model: formData.model,
-        merk: formData.merk,
-        kuantitas: Number(formData.kuantitas) || 1,
-        seller_name: formData.seller_name || "Budi (Jasa Titip JP)",
-        country: formData.country || "🇯🇵 Jepang",
-        alamat: formData.alamat,
-        photo_url: photoUrl,
-        price: Number(formData.price) || 0,
-        shipping_fee: Number(formData.shipping_fee) || 35000,
+        trip_id: formData.trip_id,
+        item_name: formData.item_name,
+        description: formData.description || null,
+        quantity: Number(formData.quantity) || 1,
+        estimated_price: Number(formData.estimated_price) || 0,
+        currency: formData.currency || "IDR",
+        reference_link: formData.reference_link || null,
+        image_url: photoUrl,
+        shipping_address_id: formData.shipping_address_id,
+        weight_value: formData.weight_value ? Number(formData.weight_value) : null,
+        weight_unit: formData.weight_unit || "KG",
       });
 
       setSubmittedId(created.id);
@@ -106,242 +156,412 @@ function RequestFormContent() {
     }
   };
 
-  return (
-    <div className="w-full max-w-3xl bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-xl">
-      <div className="flex items-center justify-between mb-8 border-b border-slate-100 pb-6">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-brand-green bg-brand-green-light px-3 py-1 rounded-full border border-emerald-200">
-            Form Titipan Luar Negeri
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight mt-2">
-            Buat Request Barang
-          </h1>
-          <p className="text-slate-600 text-sm sm:text-base mt-1">
-            Isi rincian barang yang ingin kamu titip beli kepada traveler.
-          </p>
-        </div>
-        <Link
-          href="/"
-          className="text-sm font-semibold text-slate-500 hover:text-brand-green transition-colors hidden sm:inline-flex items-center gap-1"
-        >
-          ← Kembali ke Dashboard
-        </Link>
+  if (isLoading) {
+    return (
+      <div className="mx-auto w-full max-w-3xl text-center py-12">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p className="text-sm text-muted-foreground">Memuat detail trip...</p>
       </div>
+    );
+  }
 
-      {isSubmitted ? (
-        <div className="text-center py-12 px-4 space-y-6 bg-brand-green-light/80 border border-emerald-200 rounded-3xl animate-in fade-in zoom-in duration-300">
-          <div className="w-20 h-20 bg-brand-green text-white rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg ring-8 ring-emerald-100">
-            ✓
-          </div>
+  // Fallback if trip ID is missing or invalid
+  if (!tripId || !selectedTrip) {
+    return (
+      <Card className="mx-auto w-full max-w-xl text-center [--card-spacing:24px] sm:[--card-spacing:32px] border border-border/15 bg-card rounded-[24px] shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <span>Trip Tidak Ditentukan</span>
+          </CardTitle>
+          <CardDescription>
+            Silakan pilih traveler trip aktif terlebih dahulu di dashboard untuk membuat request titipan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4 flex justify-center">
+          <Link href="/" className="button-primary px-6 py-2.5">
+            Kembali ke Dashboard
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Detail Trip Card (Boarding Pass Theme) */}
+      <Card className="mx-auto w-full max-w-3xl bg-wise-green-pale border border-wise-green-neutral rounded-[24px] overflow-hidden [--card-spacing:20px] sm:[--card-spacing:24px] shadow-sm">
+        <CardContent className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
-              Request Berhasil Terkirim! 🚀
+            <span className="text-[10px] font-bold uppercase tracking-wider text-positive-deep bg-white/60 px-2.5 py-1 rounded-full border border-emerald-300">
+              Trip Traveler Terpilih
+            </span>
+            <h2 className="text-2xl font-display font-extrabold text-foreground tracking-tight mt-1.5">
+              {selectedTrip.seller_name} ke {selectedTrip.country}
             </h2>
-            <p className="text-sm text-slate-600 font-mono">
-              ID Request: <span className="font-bold text-slate-900">{submittedId}</span>
-            </p>
-          </div>
-          <p className="text-slate-700 text-sm sm:text-base max-w-md mx-auto leading-relaxed">
-            Request barang titipan kamu telah diteruskan ke seller{" "}
-            <span className="font-bold text-slate-900">{formData.seller_name}</span>. Silakan pantau status konfirmasi harga seller secara berkala di dashboard.
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center px-8 py-3.5 bg-brand-green hover:bg-[#43A047] text-white font-bold rounded-2xl transition-all shadow-md text-base active:scale-95 cursor-pointer"
-            >
-              Kembali ke Dashboard
-            </Link>
-            <button
-              onClick={() => {
-                setIsSubmitted(false);
-                setFormData({
-                  model: "",
-                  merk: "",
-                  kuantitas: 1,
-                  seller_name: initialSeller || (sellerTrips[0]?.seller_name ?? ""),
-                  country: initialCountry || (sellerTrips[0]?.country ?? ""),
-                  alamat: "",
-                  price: 0,
-                  shipping_fee: 35000,
-                });
-                setPhotoFile(null);
-                setPreviewUrl(null);
-              }}
-              className="inline-flex items-center justify-center px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-bold rounded-2xl transition-all shadow-xs text-base cursor-pointer"
-            >
-              + Buat Request Lainnya
-            </button>
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Target Seller & Negara */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Pilih Seller / Traveler <span className="text-rose-500">*</span>
-              </label>
-              <select
-                name="seller_name"
-                value={formData.seller_name}
-                onChange={handleSellerSelect}
-                className="w-full bg-white border border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 focus:outline-none transition-all"
-                required
-              >
-                {sellerTrips.length > 0 ? (
-                  sellerTrips.map((trip) => (
-                    <option key={trip.id} value={trip.seller_name}>
-                      {trip.seller_name} ({trip.country})
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="Budi Santoso">Budi Santoso (🇯🇵 Jepang)</option>
-                    <option value="Siti Rahma">Siti Rahma (🇸🇬 Singapura)</option>
-                    <option value="Andi Wijaya">Andi Wijaya (🇰🇷 Korea Selatan)</option>
-                  </>
-                )}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Negara Asal Pembelian <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-                placeholder="Contoh: 🇯🇵 Jepang"
-                required
-                className="w-full bg-white border border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none transition-all font-medium"
-              />
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-body font-medium">
+              <p className="flex items-center gap-1.5">
+                <PlaneTakeoff className="h-4 w-4 text-positive-deep" />
+                <span>Berangkat: {selectedTrip.departure_date}</span>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <PlaneLanding className="h-4 w-4 text-positive-deep" />
+                <span>Tiba Kembali: {selectedTrip.return_date}</span>
+              </p>
             </div>
           </div>
-
-          {/* Model & Merk */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                Model / Nama Barang <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="model"
-                required
-                placeholder="Contoh: PlayStation 5 Slim Digital"
-                value={formData.model}
-                onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 rounded-xl px-4 py-3 text-slate-950 placeholder-slate-400 focus:outline-none transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                Merk / Brand <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="merk"
-                required
-                placeholder="Contoh: Sony"
-                value={formData.merk}
-                onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 rounded-xl px-4 py-3 text-slate-950 placeholder-slate-400 focus:outline-none transition-all"
-              />
-            </div>
+          <div className="shrink-0 flex items-center justify-center bg-white/45 w-16 h-16 rounded-2xl border border-white/70 shadow-xs text-positive-deep">
+            <Plane className="h-8 w-8" />
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Kuantitas & Upload Foto Referensi */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
-            <div className="sm:col-span-1">
-              <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                Kuantitas <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="kuantitas"
-                min="1"
-                required
-                value={formData.kuantitas}
-                onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 rounded-xl px-4 py-3 text-slate-950 focus:outline-none transition-all font-semibold"
-              />
+      {/* Main Request Form Card */}
+      <Card className="mx-auto w-full max-w-3xl border border-border/15 shadow-lg bg-card rounded-[24px] [--card-spacing:24px] sm:[--card-spacing:32px]">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border/10 pb-6">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-positive-deep bg-wise-green-pale px-3 py-1 rounded-full border border-wise-green-neutral">
+              Form Titipan Luar Negeri
+            </span>
+            <CardTitle className="text-2xl sm:text-3xl font-display font-extrabold text-foreground tracking-tight mt-3">
+              Buat Request Barang
+            </CardTitle>
+            <CardDescription className="text-muted-foreground text-sm sm:text-base mt-1">
+              Isi rincian barang yang ingin kamu titip beli kepada traveler.
+            </CardDescription>
+          </div>
+          <Link
+            href="/"
+            className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors hidden sm:inline-flex items-center gap-1"
+          >
+            ← Kembali ke Dashboard
+          </Link>
+        </CardHeader>
+
+        <CardContent className="pt-6">
+          {isSubmitted ? (
+            <div className="text-center py-12 px-6 space-y-6 bg-wise-green-pale/50 border border-wise-green-neutral rounded-3xl animate-in fade-in zoom-in duration-300">
+              <div className="w-20 h-20 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto shadow-md ring-8 ring-wise-green-pale">
+                <Check className="h-10 w-10 stroke-[3px]" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground tracking-tight">
+                  Request Berhasil Terkirim!
+                </h2>
+                <p className="text-sm text-muted-foreground font-mono">
+                  ID Request: <span className="font-bold text-foreground">{submittedId}</span>
+                </p>
+              </div>
+              <p className="text-foreground text-sm sm:text-base max-w-md mx-auto leading-relaxed">
+                Request barang titipan kamu telah diteruskan ke seller{" "}
+                <span className="font-bold text-foreground">{selectedTrip.seller_name}</span>. Silakan pantau status konfirmasi harga seller secara berkala di dashboard.
+              </p>
+              <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
+                <Link
+                  href="/"
+                  className="button-primary text-base px-8 py-3.5"
+                >
+                  Kembali ke Dashboard
+                </Link>
+                <Button
+                  onClick={() => {
+                    setIsSubmitted(false);
+                    setFormData((prev) => ({
+                      ...prev,
+                      item_name: "",
+                      quantity: 1,
+                      estimated_price: 0,
+                      description: "",
+                      reference_link: "",
+                      weight_value: 0,
+                    }));
+                    setPhotoFile(null);
+                    setPreviewUrl(null);
+                  }}
+                  className="button-secondary text-base px-6 py-3.5"
+                >
+                  + Buat Request Lainnya
+                </Button>
+              </div>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Item Name */}
+              <div>
+                <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Nama Barang <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="text"
+                  name="item_name"
+                  required
+                  placeholder="Contoh: PlayStation 5 Slim Digital atau Blue Bottle Coffee Beans"
+                  value={formData.item_name}
+                  onChange={handleChange}
+                  className="w-full h-11 bg-background border border-border/20 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none transition-all"
+                />
+              </div>
 
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                Foto Referensi Barang (Opsional)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-green-light file:text-brand-green cursor-pointer border border-slate-300 rounded-xl bg-slate-50 p-1"
-              />
-              {previewUrl && (
-                <div className="mt-3 p-3 bg-brand-green-light/40 border border-emerald-200 rounded-2xl flex items-center gap-4">
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0"
+              {/* Kuantitas & Estimasi Harga */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div>
+                  <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                    Kuantitas <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    type="number"
+                    name="quantity"
+                    min="1"
+                    required
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    className="w-full h-11 bg-background border border-border/20 rounded-xl px-4 py-3 text-foreground focus:outline-none transition-all font-semibold"
                   />
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">Preview Foto Terpilih</p>
-                    <p className="text-xs text-slate-500">{photoFile?.name}</p>
+                </div>
+
+                <div>
+                  <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                    Estimasi Harga (Satuan)
+                  </Label>
+                  <Input
+                    type="number"
+                    name="estimated_price"
+                    min="0"
+                    placeholder="Contoh: 75000"
+                    value={formData.estimated_price || ""}
+                    onChange={handleChange}
+                    className="w-full h-11 bg-background border border-border/20 rounded-xl px-4 py-3 text-foreground focus:outline-none transition-all font-medium"
+                  />
+                </div>
+
+                <div>
+                  <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                    Mata Uang
+                  </Label>
+                  {formData.currency && (
+                    <Select
+                      value={formData.currency}
+                      onValueChange={(val) => setFormData((prev) => ({ ...prev, currency: val || "IDR" }))}
+                    >
+                      <SelectTrigger className="w-full h-11 bg-background border border-border/20 rounded-xl px-4">
+                        <SelectValue placeholder="Mata Uang" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IDR">IDR (Rupiah)</SelectItem>
+                        <SelectItem value="JPY">JPY (Yen Jepang)</SelectItem>
+                        <SelectItem value="SGD">SGD (Dolar Singapura)</SelectItem>
+                        <SelectItem value="USD">USD (Dolar AS)</SelectItem>
+                        <SelectItem value="KRW">KRW (Won Korea)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+
+              {/* Alamat Pengiriman */}
+              <div>
+                <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Alamat Pengiriman Buyer <span className="text-destructive">*</span>
+                </Label>
+                {shippingAddresses.length > 0 ? (
+                  formData.shipping_address_id ? (
+                    <div className="space-y-3">
+                      <Select
+                        value={formData.shipping_address_id}
+                        onValueChange={(val) => setFormData((prev) => ({ ...prev, shipping_address_id: val || "" }))}
+                      >
+                        <SelectTrigger className="w-full h-11 bg-background border border-border/20 rounded-xl px-4 text-sm text-foreground">
+                          <SelectValue placeholder="Pilih Alamat Pengiriman">
+                            {(val) => {
+                              const addr = shippingAddresses.find((a) => a.id === val);
+                              return addr
+                                ? `${addr.contact_name} - ${addr.street_line_1}, ${addr.city}`
+                                : "Pilih Alamat Pengiriman";
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {shippingAddresses.map((addr) => (
+                            <SelectItem key={addr.id} value={addr.id}>
+                              {`${addr.contact_name} - ${addr.street_line_1}, ${addr.city} (${addr.postal_code}) ${addr.is_default ? "[Alamat Utama]" : ""}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Detail Alamat Terpilih */}
+                      {(() => {
+                        const selectedAddr = shippingAddresses.find((a) => a.id === formData.shipping_address_id);
+                        if (!selectedAddr) return null;
+                        return (
+                          <div className="p-4 bg-muted/30 border border-border/10 rounded-2xl text-sm text-foreground space-y-1.5 animate-in fade-in duration-200">
+                            <p className="font-bold text-xs uppercase tracking-wider text-muted-foreground mb-1">Detail Alamat Pengiriman Terpilih:</p>
+                            <p className="font-semibold text-base">{selectedAddr.contact_name}</p>
+                            <p className="text-muted-foreground">{selectedAddr.street_line_1}</p>
+                            {selectedAddr.street_line_2 && <p className="text-muted-foreground">{selectedAddr.street_line_2}</p>}
+                            <p className="text-muted-foreground">
+                              {selectedAddr.city}
+                              {selectedAddr.state_province ? `, ${selectedAddr.state_province}` : ""}
+                              {` ${selectedAddr.postal_code}`}
+                            </p>
+                            {selectedAddr.phone_number && (
+                              <p className="text-muted-foreground flex items-center gap-1.5 mt-1">
+                                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span>{selectedAddr.phone_number}</span>
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">Menyiapkan alamat...</div>
+                  )
+                ) : (
+                  <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm flex flex-col gap-2">
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                      <span>Kamu belum menambahkan alamat pengiriman!</span>
+                    </p>
+                    <p>
+                      Untuk dapat membuat request, silakan tambahkan alamat pengiriman kamu terlebih dahulu di dashboard agar FedEx dapat memproses pengiriman dengan benar.
+                    </p>
+                    <Link
+                      href="/dashboard"
+                      className="font-bold underline hover:text-negative-deep transition-colors w-fit"
+                    >
+                      Buka Pengaturan Alamat di Dashboard →
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Deskripsi & Link Referensi */}
+              <div>
+                <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Catatan Detail / Deskripsi Barang (Opsional)
+                </Label>
+                <textarea
+                  name="description"
+                  rows={3}
+                  placeholder="Contoh: Warna hitam, ukuran M, atau beli di toko Bic Camera Shibuya."
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full bg-background border border-border/20 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none transition-all resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Link Referensi */}
+                <div>
+                  <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                    Link Referensi Produk (Opsional)
+                  </Label>
+                  <Input
+                    type="url"
+                    name="reference_link"
+                    placeholder="https://example.com/product"
+                    value={formData.reference_link}
+                    onChange={handleChange}
+                    className="w-full h-11 bg-background border border-border/20 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none transition-all"
+                  />
+                </div>
+
+                {/* Estimasi Berat */}
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                      Estimasi Berat
+                    </Label>
+                    <Input
+                      type="number"
+                      name="weight_value"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.5"
+                      value={formData.weight_value || ""}
+                      onChange={handleChange}
+                      className="w-full h-11 bg-background border border-border/20 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="w-24">
+                    <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                      Satuan
+                    </Label>
+                    {formData.weight_unit && (
+                      <Select
+                        value={formData.weight_unit}
+                        onValueChange={(val) => setFormData((prev) => ({ ...prev, weight_unit: val || "KG" }))}
+                      >
+                        <SelectTrigger className="w-full h-11 bg-background border border-border/20 rounded-xl px-4">
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="KG">KG</SelectItem>
+                          <SelectItem value="LB">LB</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Alamat Pengiriman */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-              Alamat Lengkap Pengiriman Buyer <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              name="alamat"
-              rows={3}
-              required
-              placeholder="Contoh: Jl. Mawar No. 12, RT 01/RW 02, Kebayoran Baru, Jakarta Selatan, 12110"
-              value={formData.alamat}
-              onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 rounded-xl px-4 py-3 text-slate-950 placeholder-slate-400 focus:outline-none transition-all resize-none"
-            />
-          </div>
+              {/* Upload Foto Referensi */}
+              <div>
+                <Label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Foto Referensi Barang (Opsional)
+                </Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="w-full text-sm text-muted-foreground file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-wise-green-pale file:text-positive-deep cursor-pointer border border-border/20 rounded-xl bg-background p-1"
+                />
+                {previewUrl && (
+                  <div className="mt-3 p-3 bg-wise-green-pale/30 border border-wise-green-neutral rounded-2xl flex items-center gap-4 animate-in fade-in duration-200">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-16 h-16 object-cover rounded-xl border border-border/10 shrink-0"
+                    />
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Preview Foto Terpilih</p>
+                      <p className="text-xs text-muted-foreground">{photoFile?.name}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-          {/* Submit Button */}
-          <div className="pt-4 border-t border-slate-100">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-4 bg-brand-green hover:bg-[#43A047] font-bold rounded-2xl text-white transition-all shadow-md active:scale-95 cursor-pointer text-base sm:text-lg flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Mengirim Request ke Seller...</span>
-                </>
-              ) : (
-                <>
-                  <span>🚀</span>
-                  <span>Kirim Request ke Seller</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      )}
+              {/* Submit Button */}
+              <div className="pt-4 border-t border-border/10">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || shippingAddresses.length === 0}
+                  className="w-full button-primary text-base sm:text-lg h-14 rounded-2xl flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                      <span>Mengirim Request ke Seller...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Kirim Request ke Seller</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default function RequestPage() {
   return (
-    <Suspense fallback={<div className="text-slate-500">Memuat formulir...</div>}>
+    <Suspense fallback={<div className="text-muted-foreground">Memuat formulir...</div>}>
       <RequestFormContent />
     </Suspense>
   );
