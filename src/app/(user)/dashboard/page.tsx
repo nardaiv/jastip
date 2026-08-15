@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClientView, DashboardRawOrder } from "@/components/dashboard/DashboardClientView";
+import { BuyerDashboardOverview } from "@/components/dashboard/BuyerDashboardOverview";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -165,6 +166,10 @@ export default async function DashboardPage() {
     }
   } catch (err) {
     console.error("Error loading dashboard data:", err);
+  }
+
+  if (userRole === "buyer") {
+    return <BuyerDashboardOverview />;
   }
 
   return (
