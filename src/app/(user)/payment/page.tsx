@@ -9,6 +9,7 @@ import {
   submitBuyerPayment,
 } from "@/lib/services/data-service";
 import { BuyerRequest } from "@/types/buyer";
+import { ArrowLeft } from "lucide-react";
 
 function PaymentContent() {
   const searchParams = useSearchParams();
@@ -101,10 +102,10 @@ function PaymentContent() {
           </p>
         </div>
         <Link
-          href="/"
+          href="/dashboard"
           className="text-sm font-semibold text-slate-500 hover:text-brand-green transition-colors hidden sm:inline-flex items-center gap-1"
         >
-          ← Kembali ke Dashboard
+          <ArrowLeft className="h-5 w-5 mr-2" /> Kembali ke Dashboard
         </Link>
       </div>
 
@@ -121,7 +122,7 @@ function PaymentContent() {
                 {item?.id || reqId}
               </span>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-1">
               <div>
                 <p className="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-wide font-mono">
@@ -221,7 +222,7 @@ function PaymentContent() {
       ) : (
         /* FASE 2: STATUS PESANAN SUKSES */
         <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-          
+
           {/* Banner Sukses Pembayaran */}
           <div className="p-6 bg-brand-green-light/80 border border-emerald-200 rounded-3xl flex items-start gap-4">
             <div className="w-12 h-12 bg-brand-green text-white rounded-full flex items-center justify-center font-bold text-xl shrink-0 shadow-md">

@@ -74,10 +74,10 @@ function RequestFormContent() {
             currency: trip.country?.includes("Jepang") || trip.country?.includes("Japan")
               ? "JPY"
               : trip.country?.includes("Singapura") || trip.country?.includes("Singapore")
-              ? "SGD"
-              : trip.country?.includes("Korea")
-              ? "KRW"
-              : "IDR",
+                ? "SGD"
+                : trip.country?.includes("Korea")
+                  ? "KRW"
+                  : "IDR",
           }));
         }
       } catch (err) {
@@ -179,7 +179,7 @@ function RequestFormContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4 flex justify-center">
-          <Link href="/" className="button-primary px-6 py-2.5">
+          <Link href="/dashboard" className="button-primary px-6 py-2.5">
             Kembali ke Dashboard
           </Link>
         </CardContent>
@@ -190,6 +190,15 @@ function RequestFormContent() {
   return (
     <div className="space-y-6">
       {/* Detail Trip Card (Boarding Pass Theme) */}
+      <div className="max-w-3xl mx-auto w-full space-y-6">
+        {/* Tombol Kembali */}
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-slate-950 transition-colors gap-1.5"
+        >
+          ← Kembali ke Dashboard
+        </Link>
+      </div>
       <Card className="mx-auto w-full max-w-3xl bg-wise-green-pale border border-wise-green-neutral rounded-[24px] overflow-hidden [--card-spacing:20px] sm:[--card-spacing:24px] shadow-sm">
         <CardContent className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div className="space-y-2">
@@ -230,12 +239,7 @@ function RequestFormContent() {
               Isi rincian barang yang ingin kamu titip beli kepada traveler.
             </CardDescription>
           </div>
-          <Link
-            href="/"
-            className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors hidden sm:inline-flex items-center gap-1"
-          >
-            ← Kembali ke Dashboard
-          </Link>
+
         </CardHeader>
 
         <CardContent className="pt-6">
