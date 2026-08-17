@@ -437,22 +437,49 @@ export async function fetchTrackingData(requestId: string): Promise<TrackingShip
 
         return {
           id: 1,
+          shipment_id: shipment.id,
           request_id: requestId,
           courier: "FedEx Express",
           resi: shipment.fedex_tracking_number || "Pending Courier Assignment",
-          service_type: "FedEx International Priority®",
-          estimated_delivery: "Estimasi Pengiriman Aktif",
-          steps: (events || []).map((e, index) => ({
-            id: index + 1,
-            title: e.status_details || "Update Transit",
-            date: new Date(e.created_at).toLocaleDateString("id-ID"),
-            status: index === 0 ? "active" : "completed",
-          })),
-          timeline_logs: (events || []).map((e) => ({
-            date: new Date(e.created_at).toLocaleString("id-ID"),
-            location: e.location || "TRANSIT HUB",
-            note: e.status_details || "Shipment in transit",
-          })),
+          service_type: shipment.service_type || "FedEx International Priority®",
+          estimated_delivery: shipment.estimated_delivery_date
+            ? new Date(shipment.estimated_delivery_date).toLocaleString("id-ID", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })
+            : "Estimasi Pengiriman Aktif",
+          steps: events && events.length > 0
+            ? events.map((e, index) => ({
+                id: index + 1,
+                title: e.event_description || "Update Transit",
+                date: new Date(e.event_timestamp || e.created_at).toLocaleDateString("id-ID"),
+                status: index === 0 ? "active" : "completed",
+              }))
+            : [
+                {
+                  id: 1,
+                  title: "Shipment Label Created",
+                  date: new Date(shipment.created_at).toLocaleDateString("id-ID"),
+                  status: "active",
+                },
+              ],
+          timeline_logs: events && events.length > 0
+            ? events.map((e) => {
+                const locArr = [e.location_city, e.location_country].filter(Boolean);
+                const location = locArr.length > 0 ? locArr.join(", ") : "TRANSIT HUB";
+                return {
+                  date: new Date(e.event_timestamp || e.created_at).toLocaleString("id-ID"),
+                  location,
+                  note: e.event_description || "Shipment in transit",
+                };
+              })
+            : [
+                {
+                  date: new Date(shipment.created_at).toLocaleString("id-ID"),
+                  location: "FedEx Origin Facility",
+                  note: "Shipping label has been created. The shipment is being prepared for pickup.",
+                },
+              ],
         };
       }
     }

@@ -68,6 +68,7 @@ export interface TrackingTimelineLog {
 
 export interface TrackingShipment {
   id: number;
+  shipment_id?: string;
   request_id: string;
   courier: string;
   resi: string;

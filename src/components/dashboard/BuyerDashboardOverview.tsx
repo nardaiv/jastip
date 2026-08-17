@@ -340,7 +340,7 @@ export function BuyerDashboardOverview() {
 
                           {item.status === "purchased" && (
                             <Link
-                              href={`/tracking?id=${item.id}`}
+                              href={`/tracking/${item.id}`}
                               className="button-primary text-sm py-2 px-4 text-center cursor-pointer gap-2"
                             >
                               <Truck className="w-4 h-4" />
@@ -350,7 +350,7 @@ export function BuyerDashboardOverview() {
 
                           {item.status === "shipped" && (
                             <Link
-                              href={`/tracking?id=${item.id}`}
+                              href={`/tracking/${item.id}`}
                               className="button-primary text-sm py-2 px-4 text-center cursor-pointer gap-2"
                             >
                               <Truck className="w-4 h-4" />
