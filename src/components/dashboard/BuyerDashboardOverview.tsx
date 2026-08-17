@@ -121,13 +121,6 @@ export function BuyerDashboardOverview() {
             <Plus className="w-5 h-5" />
             Buat Request Barang
           </Link>
-          <Link
-            href="/tracking"
-            className="button-tertiary gap-2"
-          >
-            <Truck className="w-5 h-5" />
-            Lacak FedEx
-          </Link>
         </div>
       </div>
 
@@ -135,21 +128,19 @@ export function BuyerDashboardOverview() {
       <div className="flex border-b border-zinc-200 dark:border-zinc-800 gap-6">
         <button
           onClick={() => setActiveTab("requests")}
-          className={`pb-4 text-body-lg font-bold transition-all relative cursor-pointer ${
-            activeTab === "requests"
+          className={`pb-4 text-body-lg font-bold transition-all relative cursor-pointer ${activeTab === "requests"
               ? "text-foreground border-b-2 border-foreground"
               : "text-muted-foreground hover:text-foreground"
-          }`}
+            }`}
         >
           Pesanan & Trip Aktif
         </button>
         <button
           onClick={() => setActiveTab("addresses")}
-          className={`pb-4 text-body-lg font-bold transition-all relative cursor-pointer ${
-            activeTab === "addresses"
+          className={`pb-4 text-body-lg font-bold transition-all relative cursor-pointer ${activeTab === "addresses"
               ? "text-foreground border-b-2 border-foreground"
               : "text-muted-foreground hover:text-foreground"
-          }`}
+            }`}
         >
           Alamat Pengiriman
         </button>
@@ -409,11 +400,10 @@ export function BuyerDashboardOverview() {
                         {trip.flag}
                       </span>
                       <span
-                        className={`text-caption px-3 py-1 rounded-full font-bold uppercase tracking-wider ${
-                          trip.status === "Aktif"
+                        className={`text-caption px-3 py-1 rounded-full font-bold uppercase tracking-wider ${trip.status === "Aktif"
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground"
-                        }`}
+                          }`}
                       >
                         {trip.status}
                       </span>

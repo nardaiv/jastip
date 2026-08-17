@@ -6,13 +6,14 @@ import { usePathname } from "next/navigation";
 import { useUserStore } from "@/providers/user-store-provider";
 import { logout } from "@/app/login/actions";
 import { createClient } from "@/lib/supabase/client";
+import { User, Key, MapPin, LogOut, ChevronDown } from "lucide-react";
 
 export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
   const profile = useUserStore((s) => s.profile);
-  // Gunakan setProfile atau updateProfile sesuai dengan yang tersedia di store Anda
   const setProfile = useUserStore((s) => s.setProfile || s.updateProfile); 
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // Mencegah hydration error saat render pertama kali
   useEffect(() => {
@@ -41,7 +42,20 @@ export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
     }
 
     syncProfile();
-  }, [setProfile]);
+  }, []);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".user-nav-dropdown-container")) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, [showDropdown]);
 
   const displayName = profile?.full_name || fallbackEmail || "User";
   const displayRole = profile?.role || "buyer";
@@ -100,29 +114,98 @@ export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
         })}
       </nav>
 
-      {/* KANAN: Informasi Akun & Role Asli */}
-      <div className="flex items-center gap-4">
-        <div className="hidden sm:flex flex-col items-end text-right">
-          <span className="text-body-sm-strong text-ink dark:text-zinc-50">
-            {displayName}
-          </span>
-          <span className="capitalize text-caption text-mute">
-            {displayRole}
-          </span>
-        </div>
+      {/* KANAN: Informasi Akun & Dropdown */}
+      <div className="relative user-nav-dropdown-container flex items-center gap-4">
+        {/* Toggle Dropdown Button */}
+        <button
+          onClick={() => setShowDropdown(!showDropdown)}
+          className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-zinc-800/50 p-1.5 rounded-full transition-all focus:outline-none cursor-pointer border border-transparent hover:border-slate-100"
+        >
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt={displayName}
+              className="h-9 w-9 rounded-full object-cover border border-slate-200 dark:border-zinc-700 shadow-xs"
+            />
+          ) : (
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-green-light text-brand-green font-bold border border-emerald-100 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 shadow-xs">
+              {avatarLetter}
+            </div>
+          )}
+          <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+        </button>
 
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas-soft text-ink font-bold border border-canvas-soft dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700">
-          {avatarLetter}
-        </div>
+        {/* Dropdown Menu (Google Style) */}
+        {showDropdown && (
+          <div className="absolute right-0 top-12 z-50 w-72 bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-3xl shadow-2xl p-5 space-y-4 animate-in fade-in slide-in-from-top-3 duration-200">
+            {/* Account Info Profile (Google layout) */}
+            <div className="flex flex-col items-center text-center pb-2">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-2 truncate w-full px-2 text-center">
+                {fallbackEmail}
+              </span>
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={displayName}
+                  className="h-16 w-16 rounded-full object-cover border-2 border-emerald-100 dark:border-zinc-700 shadow-sm"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-green-light text-brand-green font-extrabold text-2xl border-2 border-emerald-100 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 shadow-sm">
+                  {avatarLetter}
+                </div>
+              )}
+              <h4 className="text-body-lg font-bold text-slate-900 dark:text-zinc-50 mt-3 truncate w-full">
+                {displayName}
+              </h4>
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 uppercase tracking-wider mt-1.5 shadow-xs">
+                {displayRole}
+              </span>
+            </div>
 
-        <form action={logout}>
-          <button
-            type="submit"
-            className="button-tertiary text-xs py-1.5 px-3 rounded-xl h-8 font-semibold flex items-center justify-center"
-          >
-            Log Out
-          </button>
-        </form>
+            <div className="border-t border-slate-100 dark:border-zinc-800 my-2"></div>
+
+            {/* Menu Options */}
+            <div className="space-y-1">
+              <Link
+                href="/profile?tab=profile"
+                onClick={() => setShowDropdown(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-800 text-sm font-semibold text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-zinc-50 transition-colors"
+              >
+                <User className="w-4 h-4 text-slate-500" />
+                <span>Edit Profil</span>
+              </Link>
+              <Link
+                href="/profile?tab=addresses"
+                onClick={() => setShowDropdown(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-800 text-sm font-semibold text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-zinc-50 transition-colors"
+              >
+                <MapPin className="w-4 h-4 text-slate-500" />
+                <span>Kelola Alamat</span>
+              </Link>
+              <Link
+                href="/profile?tab=security"
+                onClick={() => setShowDropdown(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-800 text-sm font-semibold text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-zinc-50 transition-colors"
+              >
+                <Key className="w-4 h-4 text-slate-500" />
+                <span>Ganti Password</span>
+              </Link>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-zinc-800 my-2"></div>
+
+            {/* Sign Out Button */}
+            <form action={logout}>
+              <button
+                type="submit"
+                className="w-full py-3 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/20 text-slate-700 dark:text-zinc-300 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 border border-slate-200 dark:border-zinc-800 hover:border-rose-200 dark:hover:border-rose-900 transition-all cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Keluar dari Akun</span>
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
