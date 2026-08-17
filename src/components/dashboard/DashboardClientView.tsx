@@ -199,37 +199,6 @@ export function DashboardClientView({
       orders: val.orders,
     }));
 
-    const hasData = orders.length > 0 && orders.some(o => (o.total_price || 0) > 0);
-
-    if (!hasData) {
-      const sampleDaily: ChartDataPoint[] = dailyArr.map((d, idx) => ({
-        ...d,
-        revenue: [1200000, 1850000, 950000, 2400000, 3100000, 2800000, 4200000][idx] || 1500000,
-        profit: [180000, 275000, 145000, 360000, 465000, 420000, 630000][idx] || 225000,
-        orders: [2, 3, 1, 4, 5, 4, 6][idx] || 2,
-      }));
-
-      const sampleWeekly: ChartDataPoint[] = weeklyList.map((w, idx) => ({
-        ...w,
-        revenue: [5400000, 7800000, 9200000, 14500000][idx] || 6000000,
-        profit: [810000, 1170000, 1380000, 2175000][idx] || 900000,
-        orders: [8, 12, 15, 22][idx] || 10,
-      }));
-
-      const sampleMonthly: ChartDataPoint[] = monthlyList.map((m, idx) => ({
-        ...m,
-        revenue: [12500000, 18200000, 24000000, 31500000, 28900000, 42100000][idx] || 20000000,
-        profit: [1875000, 2730000, 3600000, 4725000, 4335000, 6315000][idx] || 3000000,
-        orders: [18, 26, 35, 46, 41, 58][idx] || 30,
-      }));
-
-      return {
-        dailyData: sampleDaily,
-        weeklyData: sampleWeekly,
-        monthlyData: sampleMonthly,
-      };
-    }
-
     return {
       dailyData: dailyArr,
       weeklyData: weeklyList,

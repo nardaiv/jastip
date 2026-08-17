@@ -10,7 +10,7 @@ import { User, Key, MapPin, LogOut, ChevronDown } from "lucide-react";
 
 export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
   const profile = useUserStore((s) => s.profile);
-  const setProfile = useUserStore((s) => s.setProfile || s.updateProfile); 
+  const setProfile = useUserStore((s) => s.setProfile || s.updateProfile);
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -20,8 +20,10 @@ export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
     setIsClient(true);
   }, []);
 
-  // Ambil data profil & role terbaru dari Supabase saat komponen dimuat
+  // Ambil data profil & role terbaru dari Supabase saat komponen dimuat jika belum ada di store
   useEffect(() => {
+    if (profile) return;
+
     async function syncProfile() {
       const supabase = createClient();
       const {
@@ -42,7 +44,7 @@ export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
     }
 
     syncProfile();
-  }, []);
+  }, [profile, setProfile]);
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -65,6 +67,12 @@ export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
   const navItems = [
     { name: "Dashboard", href: "/dashboard" },
   ];
+
+  if (displayRole === "buyer") {
+    navItems.push(
+      { name: "Requests", href: "/requests" },
+    );
+  }
 
   // 2. Tambahan Menu Khusus Seller
   if (displayRole === "seller") {
@@ -91,22 +99,21 @@ export function UserNav({ fallbackEmail }: { fallbackEmail: string }) {
         {navItems.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
-          
+
           const isAdminMenu = item.name === "Admin";
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`text-sm transition-colors ${
-                isAdminMenu
+              className={`text-sm transition-colors ${isAdminMenu
                   ? isActive
                     ? "text-[#FF0000] font-bold" // Admin Aktif (Merah Terang)
                     : "text-[#FF0000]/50 font-medium hover:text-[#FF0000]" // Admin Non-Aktif (Merah Redup, terang saat di-hover)
                   : isActive
-                  ? "text-foreground font-bold hover:text-foreground" // Standar Aktif
-                  : "text-muted-foreground font-medium hover:text-foreground" // Standar Non-Aktif
-              }`}
+                    ? "text-foreground font-bold hover:text-foreground" // Standar Aktif
+                    : "text-muted-foreground font-medium hover:text-foreground" // Standar Non-Aktif
+                }`}
             >
               {item.name}
             </Link>
