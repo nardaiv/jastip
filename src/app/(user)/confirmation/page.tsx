@@ -84,10 +84,14 @@ function ConfirmationContent() {
     );
   }
 
-  const price = item.estimated_price || 265000;
-  const fee = item.jastip_fee || Math.round(price * 0.1);
-  const shippingFee = item.shipping_fee || 20000;
-  const totalDibayar = price + fee + shippingFee;
+  const price = (item.status !== "pending" && item.agreed_price != null)
+    ? item.agreed_price
+    : (item.estimated_price || 0);
+  const quantityVal = item.quantity || 1;
+  const itemTotalPrice = price * quantityVal;
+  const fee = item.jastip_fee != null ? item.jastip_fee : Math.round(itemTotalPrice * 0.1);
+  const shippingFee = item.shipping_fee || 0;
+  const totalDibayar = item.total_price || (itemTotalPrice + fee + shippingFee);
 
   return (
     <div className="max-w-3xl mx-auto w-full space-y-6">
@@ -149,12 +153,12 @@ function ConfirmationContent() {
           </h3>
 
           <div className="flex justify-between text-body-sm text-muted-foreground">
-            <span>Harga Barang Asli</span>
-            <span className="font-semibold text-foreground">{formatRupiah(price)}</span>
+            <span>Harga Barang Asli {quantityVal > 1 ? `(${quantityVal}x Rp ${price.toLocaleString("id-ID")})` : ""}</span>
+            <span className="font-semibold text-foreground">{formatRupiah(itemTotalPrice)}</span>
           </div>
 
           <div className="flex justify-between text-body-sm text-muted-foreground">
-            <span>Fee Jastip (10%)</span>
+            <span>Fee Jastip</span>
             <span className="font-semibold text-foreground">{formatRupiah(fee)}</span>
           </div>
 

@@ -30,6 +30,7 @@ export interface BuyerRequest {
   seller_name: string;
   country: string;
   estimated_price?: number | null;
+  agreed_price?: number | null;
   currency?: string | null;
   jastip_fee?: number | null;
   shipping_fee?: number | null;

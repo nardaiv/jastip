@@ -262,7 +262,7 @@ function RequestFormContent() {
               </p>
               <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="button-primary text-base px-8 py-3.5"
                 >
                   Kembali ke Dashboard

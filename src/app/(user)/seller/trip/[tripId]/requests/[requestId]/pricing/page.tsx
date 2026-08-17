@@ -29,6 +29,7 @@ export default function PricingPage() {
   const [saving, setSaving] = useState(false);
 
   const [itemName, setItemName] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [currency, setCurrency] = useState("USD");
   const [exchangeRate, setExchangeRate] = useState(15000);
 
@@ -54,12 +55,13 @@ export default function PricingPage() {
       
       const { data, error } = await supabase
         .from("item_requests")
-        .select("item_name, currency, buyer_id, shipping_address_id")
+        .select("item_name, currency, buyer_id, shipping_address_id, quantity")
         .eq("id", requestId)
         .single();
 
       if (!error && data) {
         setItemName(data.item_name);
+        setQuantity(data.quantity || 1);
         const itemCurrency = data.currency || "USD";
         setCurrency(itemCurrency);
 
@@ -213,8 +215,9 @@ export default function PricingPage() {
   const safeShippingFee = Number(shippingFee) || 0;
 
   const agreedPriceIdr = safeForeignPrice * exchangeRate;
-  const jastipFeeIdr = agreedPriceIdr * (safeFeePercent / 100);
-  const totalPriceIdr = agreedPriceIdr + jastipFeeIdr + safeShippingFee;
+  const totalAgreedPriceIdr = agreedPriceIdr * quantity;
+  const jastipFeeIdr = totalAgreedPriceIdr * (safeFeePercent / 100);
+  const totalPriceIdr = totalAgreedPriceIdr + jastipFeeIdr + safeShippingFee;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,7 +281,7 @@ export default function PricingPage() {
               Set Price
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Rincian harga untuk <span className="font-medium text-foreground">{itemName}</span>
+              Rincian harga untuk <span className="font-medium text-foreground">{itemName}</span> (Kuantitas: {quantity})
             </p>
           </div>
         </div>
@@ -558,9 +561,9 @@ export default function PricingPage() {
                 
                 <div className="space-y-4 text-sm">
                   <div className="flex justify-between items-center text-muted-foreground">
-                    <span>Harga Barang</span>
+                    <span>Harga Barang {quantity > 1 ? `(${quantity}x Rp ${agreedPriceIdr.toLocaleString("id-ID", { maximumFractionDigits: 0 })})` : ""}</span>
                     <span className="font-medium text-foreground">
-                      Rp {agreedPriceIdr.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+                      Rp {totalAgreedPriceIdr.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                     </span>
                   </div>
                   
