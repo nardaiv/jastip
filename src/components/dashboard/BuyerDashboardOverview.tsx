@@ -103,7 +103,7 @@ export function BuyerDashboardOverview() {
   // Fuse.js search setup for seller trips
   const filteredTrips = searchQuery.trim()
     ? new Fuse(trips, {
-        keys: ["country", "seller_name"],
+        keys: ["country", "seller_name", "title"],
         threshold: 0.3,
       }).search(searchQuery).map((result) => result.item)
     : trips;
@@ -233,10 +233,14 @@ export function BuyerDashboardOverview() {
                           </span>
                         </div>
 
-                        <h3 className="text-body-lg font-bold text-foreground">
-                          {trip.country}
+                        <h3 className="text-body-lg font-bold text-foreground line-clamp-1">
+                          {trip.title || `Trip ke ${trip.country}`}
                         </h3>
-                        <p className="text-body-sm text-muted-foreground mt-1">
+                        <p className="text-body-sm text-muted-foreground mt-1 flex items-center gap-1">
+                          <span>Destinasi:</span>
+                          <span className="font-bold text-foreground">{trip.country}</span>
+                        </p>
+                        <p className="text-body-sm text-muted-foreground mt-0.5">
                           Seller: <span className="text-foreground font-bold">{trip.seller_name}</span>
                         </p>
 

@@ -12,6 +12,7 @@ export interface SellerTrip {
   id: string; // Real trips use UUID
   seller_id: string;
   seller_name: string;
+  title: string;
   country: string;
   flag: string;
   departure_date: string;
