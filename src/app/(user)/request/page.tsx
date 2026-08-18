@@ -18,6 +18,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Phone, PlaneTakeoff, PlaneLanding, Plane, AlertTriangle, Check } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 function RequestFormContent() {
   const searchParams = useSearchParams();
@@ -26,6 +35,16 @@ function RequestFormContent() {
   const [selectedTrip, setSelectedTrip] = useState<SellerTrip | null>(null);
   const [shippingAddresses, setShippingAddresses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertOpen(true);
+  };
 
   const [formData, setFormData] = useState({
     trip_id: tripId,
@@ -100,14 +119,14 @@ function RequestFormContent() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
-        alert("Harap pilih file gambar saja (JPG, PNG, WebP, dll.).");
+        showAlert("Format File Salah", "Harap pilih file gambar saja (JPG, PNG, WebP, dll.).");
         e.target.value = "";
         setPhotoFile(null);
         setPreviewUrl(null);
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert("Ukuran file tidak boleh melebihi 5 MB.");
+        showAlert("Ukuran File Terlalu Besar", "Ukuran file tidak boleh melebihi 5 MB.");
         e.target.value = "";
         setPhotoFile(null);
         setPreviewUrl(null);
@@ -121,7 +140,7 @@ function RequestFormContent() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!formData.trip_id || !formData.item_name || !formData.shipping_address_id) {
-      alert("Mohon lengkapi semua field yang wajib (*).");
+      showAlert("Data Belum Lengkap", "Mohon lengkapi semua field yang wajib (*).");
       return;
     }
 
@@ -150,7 +169,7 @@ function RequestFormContent() {
       setIsSubmitted(true);
     } catch (err) {
       console.error("Submit request error:", err);
-      alert("Terjadi kesalahan saat mengirim request. Coba lagi.");
+      showAlert("Gagal Mengirim Request", "Terjadi kesalahan saat mengirim request. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -205,10 +224,18 @@ function RequestFormContent() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-positive-deep bg-white/60 px-2.5 py-1 rounded-full border border-emerald-300">
               Trip Traveler Terpilih
             </span>
-            <h2 className="text-2xl font-display font-extrabold text-foreground tracking-tight mt-1.5">
-              {selectedTrip.seller_name} ke {selectedTrip.country}
+            <h2 className="text-2xl font-display font-extrabold text-foreground tracking-tight mt-1.5" title={selectedTrip.title}>
+              {selectedTrip.title || `Trip ke ${selectedTrip.country}`}
             </h2>
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-body font-medium">
+              <p className="flex items-center gap-1.5">
+                <span className="text-mute font-semibold">Traveler:</span>
+                <span className="text-foreground font-bold">{selectedTrip.seller_name}</span>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <span className="text-mute font-semibold">Negara Tujuan:</span>
+                <span className="text-foreground font-bold">{selectedTrip.country}</span>
+              </p>
               <p className="flex items-center gap-1.5">
                 <PlaneTakeoff className="h-4 w-4 text-positive-deep" />
                 <span>Berangkat: {selectedTrip.departure_date}</span>
@@ -559,6 +586,20 @@ function RequestFormContent() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setAlertOpen(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

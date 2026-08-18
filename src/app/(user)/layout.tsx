@@ -26,9 +26,7 @@ export default async function UserLayout({
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-6">
             {/* Brand Logo */}
             <div className="flex items-center gap-2 font-bold text-xl text-foreground">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-extrabold text-sm">
-                J
-              </div>
+              <img src="/logo.svg" alt="Jastip Logo" className="h-8 w-8" />
               <span>Jastip</span>
             </div>
 
