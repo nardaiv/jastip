@@ -134,7 +134,7 @@ export async function sendRequestStatusEmail(itemRequestId: string, newStatus: s
         recipientEmail = buyerEmail;
         recipientName = buyerName;
         subject = `[Jastip] Permintaan Disetujui & Penawaran Harga: ${item_name}`;
-        messageBody = `Halo <strong>${buyerName}</strong>,<br/><br/>Traveler <strong>${sellerName}</strong> telah menyetujui permintaan titipan Anda untuk <strong>"${item_name}"</strong>.<br/>Harga penawaran total yang diajukan adalah <strong>${currency} ${total_price.toLocaleString("id-ID")}</strong>.<br/>Silakan tinjau penawaran dan lakukan pembayaran jika Anda setuju dengan harga tersebut.`;
+        messageBody = `Halo <strong>${buyerName}</strong>,<br/><br/>Traveler <strong>${sellerName}</strong> telah menyetujui permintaan titipan Anda untuk <strong>"${item_name}"</strong>.<br/>Harga penawaran total yang diajukan adalah <strong>Rp ${total_price.toLocaleString("id-ID")}</strong>.<br/>Silakan tinjau penawaran dan lakukan pembayaran jika Anda setuju dengan harga tersebut.`;
         statusColor = "#3b82f6";
         statusLabel = "Disetujui / Penawaran Harga";
         break;
@@ -237,7 +237,7 @@ export async function sendRequestStatusEmail(itemRequestId: string, newStatus: s
             </tr>
             <tr>
               <td style="padding: 10px 0; color: #64748b;">Total Biaya</td>
-              <td style="padding: 10px 0; color: #00b159; font-weight: 700; text-align: right;">${currency} ${total_price.toLocaleString("id-ID")}</td>
+              <td style="padding: 10px 0; color: #00b159; font-weight: 700; text-align: right;">Rp ${total_price.toLocaleString("id-ID")}</td>
             </tr>
           </table>
         </div>

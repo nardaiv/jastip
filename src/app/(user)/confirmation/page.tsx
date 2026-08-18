@@ -3,13 +3,19 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-
-import {
-  fetchBuyerRequestById,
-  updateRequestStatus,
-} from "@/lib/services/data-service";
-import { BuyerRequest } from "@/types/buyer";
 import { ArrowLeft, Check, X } from "lucide-react";
+import { BuyerRequest } from "@/types/buyer";
+import { fetchBuyerRequestById, updateRequestStatus } from "@/lib/services/data-service";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 function ConfirmationContent() {
   const router = useRouter();
@@ -19,6 +25,7 @@ function ConfirmationContent() {
   const [item, setItem] = useState<BuyerRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   useEffect(() => {
     async function loadItem() {
@@ -35,17 +42,13 @@ function ConfirmationContent() {
     loadItem();
   }, [reqId]);
 
-  const handleCancel = async () => {
+  const handleConfirmCancel = async () => {
     if (!item) return;
-    const isConfirmed = window.confirm(
-      "Apakah Anda yakin ingin membatalkan request ini karena harga tidak sesuai?"
-    );
-    if (!isConfirmed) return;
 
     setCancelling(true);
     try {
       await updateRequestStatus(item.id, "cancelled");
-      router.push("/");
+      router.push("/dashboard");
     } catch (e) {
       console.error("Cancel error:", e);
       setCancelling(false);
@@ -183,14 +186,31 @@ function ConfirmationContent() {
 
         {/* Tombol Aksi: Cancel Request & Konfirmasi Pembayaran */}
         <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-3">
-          <button
-            type="button"
-            onClick={handleCancel}
-            disabled={cancelling}
-            className="w-full sm:w-auto button-tertiary text-sm py-3 px-6 cursor-pointer text-center text-negative border-negative hover:bg-negative/10 dark:hover:bg-negative/20 transition-all active:scale-95 disabled:opacity-50"
-          >
-            {cancelling ? "Membatalkan..." : <><X className="h-5 w-5 mr-2" /> Batalkan Request (Harga Tidak Sesuai) </>}
-          </button>
+          <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+            <button
+              type="button"
+              onClick={() => setIsCancelDialogOpen(true)}
+              disabled={cancelling}
+              className="w-full sm:w-auto button-tertiary text-sm py-3 px-6 cursor-pointer text-center text-negative border-negative hover:bg-negative/10 dark:hover:bg-negative/20 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <X className="h-5 w-5 mr-2" /> Batalkan Request (Harga Tidak Sesuai)
+            </button>
+
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Batalkan Request?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Apakah Anda yakin ingin membatalkan request ini karena harga tidak sesuai? Tindakan ini akan membatalkan pesanan secara permanen.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmCancel}>
+                  Ya, Batalkan
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <Link
             href={`/payment?id=${encodeURIComponent(item.id)}`}

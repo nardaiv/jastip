@@ -36,10 +36,14 @@ function PaymentContent() {
     load();
   }, [reqId]);
 
-  const price = item?.estimated_price || 265000;
-  const fee = item?.jastip_fee || Math.round(price * 0.1);
-  const shippingFee = item?.shipping_fee || 20000;
-  const totalPayment = price + fee + shippingFee;
+  const price = (item?.status !== "pending" && item?.agreed_price != null)
+    ? item.agreed_price
+    : (item?.estimated_price || 0);
+  const quantityVal = item?.quantity || 1;
+  const itemTotalPrice = price * quantityVal;
+  const fee = item?.jastip_fee != null ? item.jastip_fee : Math.round(itemTotalPrice * 0.1);
+  const shippingFee = item?.shipping_fee || 0;
+  const totalPayment = item?.total_price || (itemTotalPrice + fee + shippingFee);
 
   const formatRupiah = (number: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -153,7 +157,7 @@ function PaymentContent() {
             <div className="card-feature-green border border-canvas-soft/85 space-y-3.5">
               <div className="flex items-center justify-between">
                 <p className="text-caption font-bold text-positive-deep uppercase tracking-wider">
-                  Rekening Bank Tujuan (Seller Jastip)
+                  Rekening Bank Tujuan (Admin Jastip)
                 </p>
                 <span className="text-caption font-mono px-2 py-0.5 rounded-md bg-canvas border border-canvas-soft text-foreground">
                   {item?.id || reqId}
@@ -163,10 +167,10 @@ function PaymentContent() {
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-1">
                 <div>
                   <p className="text-display-xs font-extrabold text-foreground tracking-wide font-mono">
-                    BCA - 8820 1923 881
+                    Mandiri - 1370 0998 87766
                   </p>
                   <p className="text-caption sm:text-body-sm text-body">
-                    a.n. <span className="text-foreground font-semibold">{item?.seller_name || "Budi Santoso"}</span> (Jastip Seller)
+                    a.n. <span className="text-foreground font-semibold">PT Jastip Nusantara</span> (Admin Jastip)
                   </p>
                 </div>
                 <div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-border/10">

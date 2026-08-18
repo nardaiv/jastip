@@ -25,6 +25,28 @@ export default function AdminPaymentVerificationPage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectForm, setShowRejectForm] = useState(false);
 
+  const [alertInfo, setAlertInfo] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+    onConfirm?: () => void;
+  }>({
+    show: false,
+    title: "",
+    message: "",
+    type: "info",
+  });
+
+  const showAlert = (
+    title: string,
+    message: string,
+    type: "success" | "error" | "info" = "info",
+    onConfirm?: () => void
+  ) => {
+    setAlertInfo({ show: true, title, message, type, onConfirm });
+  };
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -55,7 +77,7 @@ export default function AdminPaymentVerificationPage() {
 
   const handleVerify = async (action: "approve" | "reject") => {
     if (action === "reject" && !rejectionReason.trim()) {
-      alert("Harap masukkan alasan penolakan.");
+      showAlert("Validasi Gagal", "Harap masukkan alasan penolakan.", "error");
       return;
     }
 
@@ -71,18 +93,22 @@ export default function AdminPaymentVerificationPage() {
           rejection_reason: action === "reject" ? rejectionReason : null
         });
 
-        alert(
+        showAlert(
+          "Sukses",
           action === "approve"
             ? "Pembayaran berhasil disetujui!"
-            : "Pembayaran berhasil ditolak."
+            : "Pembayaran berhasil ditolak.",
+          "success",
+          () => {
+            router.push("/admin");
+            router.refresh();
+          }
         );
-        router.push("/admin");
-        router.refresh();
       } else {
-        alert(res.error || "Gagal memproses verifikasi.");
+        showAlert("Gagal", res.error || "Gagal memproses verifikasi.", "error");
       }
     } catch (err: any) {
-      alert(err.message || "Terjadi kesalahan.");
+      showAlert("Error", err.message || "Terjadi kesalahan.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -259,6 +285,43 @@ export default function AdminPaymentVerificationPage() {
           </div>
         </div>
       </div>
+
+      {/* Premium Alert Dialog */}
+      {alertInfo.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs transition-opacity animate-in fade-in">
+          <div className="bg-card border border-canvas-soft dark:border-zinc-800 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                alertInfo.type === "success"
+                  ? "bg-wise-green-pale text-ink"
+                  : alertInfo.type === "error"
+                    ? "bg-negative-bg text-negative border border-negative/20"
+                    : "bg-muted text-muted-foreground"
+              }`}>
+                {alertInfo.type === "success" ? "✓" : alertInfo.type === "error" ? "✕" : "i"}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-foreground text-lg leading-tight">{alertInfo.title}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{alertInfo.message}</p>
+              </div>
+            </div>
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setAlertInfo((prev) => ({ ...prev, show: false }));
+                  if (alertInfo.onConfirm) {
+                    alertInfo.onConfirm();
+                  }
+                }}
+                className="button-primary px-5 py-2 text-xs font-bold rounded-xl h-9 cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
