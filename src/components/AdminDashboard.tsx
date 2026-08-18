@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Users,
   Plane,
@@ -2200,22 +2201,36 @@ export function AdminDashboard({
                           {formatTripDate(req.created_at)}
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${req.status === "delivered"
-                              ? "bg-wise-green-pale text-positive-deep border-wise-green-neutral/30 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
-                              : req.status === "purchased"
-                                ? "bg-accent-cyan/10 text-ink-deep border-accent-cyan/20 dark:bg-accent-cyan/20 dark:text-accent-cyan dark:border-accent-cyan/30"
-                                : req.status === "accepted"
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border ${req.status === "delivered"
+                                ? "bg-wise-green-pale text-positive-deep border-wise-green-neutral/30 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50"
+                                : req.status === "purchased"
                                   ? "bg-accent-cyan/10 text-ink-deep border-accent-cyan/20 dark:bg-accent-cyan/20 dark:text-accent-cyan dark:border-accent-cyan/30"
-                                  : req.status === "pending"
-                                    ? "bg-warning/10 text-warning-deep border-warning/20 dark:bg-warning/20 dark:text-warning-deep dark:border-warning/30"
-                                    : req.status === "rejected"
-                                      ? "bg-negative/10 text-negative border-negative/20 dark:bg-negative/20 dark:text-negative-deep dark:border-negative/30"
-                                      : "bg-canvas-soft text-foreground border-border/10 dark:bg-muted dark:text-mute dark:border-border/30"
-                              }`}
-                          >
-                            {req.status}
-                          </span>
+                                  : req.status === "accepted"
+                                    ? "bg-accent-cyan/10 text-ink-deep border-accent-cyan/20 dark:bg-accent-cyan/20 dark:text-accent-cyan dark:border-accent-cyan/30"
+                                    : req.status === "pending"
+                                      ? "bg-warning/10 text-warning-deep border-warning/20 dark:bg-warning/20 dark:text-warning-deep dark:border-warning/30"
+                                      : req.status === "verifying"
+                                        ? "bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30"
+                                        : req.status === "paid"
+                                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30"
+                                          : req.status === "rejected"
+                                            ? "bg-negative/10 text-negative border-negative/20 dark:bg-negative/20 dark:text-negative-deep dark:border-negative/30"
+                                            : "bg-canvas-soft text-foreground border-border/10 dark:bg-muted dark:text-mute dark:border-border/30"
+                                }`}
+                            >
+                              {req.status === "verifying" ? "verifying" : req.status}
+                            </span>
+                            {req.status === "verifying" && (
+                              <Link
+                                href={`/admin/requests/${req.id}/payment`}
+                                className="inline-flex items-center justify-center h-7 px-3 text-[10px] font-bold text-ink bg-wise-green hover:bg-wise-green-active rounded-lg transition-colors cursor-pointer self-start border-none mt-1 shadow-xs"
+                              >
+                                Verify Payment →
+                              </Link>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

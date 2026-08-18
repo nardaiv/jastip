@@ -138,35 +138,51 @@ export async function fetchBuyerRequests(): Promise<BuyerRequest[]> {
           profiles:seller_id (
             full_name
           )
+        ),
+        payments (
+          status,
+          rejection_reason,
+          created_at
         )
       `)
       .eq("buyer_id", user.id)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      return (data || []).map((r: any) => ({
-        id: r.id,
-        user_id: r.buyer_id,
-        trip_id: r.trip_id,
-        item_name: r.item_name,
-        description: r.description,
-        quantity: r.quantity,
-        seller_name: r.trips?.profiles?.full_name || "Traveler",
-        country: r.trips?.destination_country || "Luar Negeri",
-        estimated_price: r.estimated_price || 0,
-        agreed_price: r.agreed_price,
-        currency: r.currency || "IDR",
-        jastip_fee: r.jastip_fee || 0,
-        shipping_fee: r.shipping_fee || 0,
-        total_price: r.total_price || 0,
-        reference_link: r.reference_link,
-        image_url: r.image_url,
-        shipping_address_id: r.shipping_address_id,
-        weight_value: r.weight_value,
-        weight_unit: r.weight_unit,
-        status: r.status,
-        created_at: r.created_at,
-      }));
+      return (data || []).map((r: any) => {
+        const payments = r.payments || [];
+        const latestPayment = payments.length > 0
+          ? [...payments].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+          : null;
+
+        return {
+          id: r.id,
+          user_id: r.buyer_id,
+          trip_id: r.trip_id,
+          item_name: r.item_name,
+          description: r.description,
+          quantity: r.quantity,
+          seller_name: r.trips?.profiles?.full_name || "Traveler",
+          country: r.trips?.destination_country || "Luar Negeri",
+          estimated_price: r.estimated_price || 0,
+          agreed_price: r.agreed_price,
+          currency: r.currency || "IDR",
+          jastip_fee: r.jastip_fee || 0,
+          shipping_fee: r.shipping_fee || 0,
+          total_price: r.total_price || 0,
+          reference_link: r.reference_link,
+          image_url: r.image_url,
+          shipping_address_id: r.shipping_address_id,
+          weight_value: r.weight_value,
+          weight_unit: r.weight_unit,
+          status: r.status,
+          created_at: r.created_at,
+          latest_payment: latestPayment ? {
+            status: latestPayment.status,
+            rejection_reason: latestPayment.rejection_reason,
+          } : null,
+        };
+      });
     }
   } catch (e) {
     console.warn("Supabase fetch buyer_requests error:", e);
@@ -189,6 +205,11 @@ export async function fetchBuyerRequestById(id: string): Promise<BuyerRequest | 
           profiles:seller_id (
             full_name
           )
+        ),
+        payments (
+          status,
+          rejection_reason,
+          created_at
         )
       `)
       .eq("id", id)
@@ -196,6 +217,11 @@ export async function fetchBuyerRequestById(id: string): Promise<BuyerRequest | 
 
     if (!error && data) {
       const r: any = data;
+      const payments = r.payments || [];
+      const latestPayment = payments.length > 0
+        ? [...payments].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+        : null;
+
       return {
         id: r.id,
         user_id: r.buyer_id,
@@ -218,6 +244,10 @@ export async function fetchBuyerRequestById(id: string): Promise<BuyerRequest | 
         weight_unit: r.weight_unit,
         status: r.status,
         created_at: r.created_at,
+        latest_payment: latestPayment ? {
+          status: latestPayment.status,
+          rejection_reason: latestPayment.rejection_reason,
+        } : null,
       };
     }
   } catch (e) {
@@ -330,6 +360,47 @@ export async function updateRequestStatus(
 }
 
 /**
+ * Admin verifies a payment. Accept sets request status to 'paid'. Reject sets payment status to 'payment_rejected' and records reason.
+ */
+export async function adminVerifyPayment(
+  requestId: string,
+  action: "accept" | "reject",
+  rejectionReason?: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient();
+  try {
+    if (action === "accept") {
+      // Update request status to paid
+      const { error: reqError } = await supabase
+        .from("item_requests")
+        .update({ status: "paid" })
+        .eq("id", requestId);
+      if (reqError) return { success: false, error: reqError.message };
+      // Optionally, update/create payment record as paid
+      await supabase
+        .from("payments")
+        .upsert({ request_id: requestId, status: "paid" }, { onConflict: "request_id" });
+    } else {
+      // Reject: create/update payment with rejection reason
+      const { error: payError } = await supabase
+        .from("payments")
+        .upsert({
+          request_id: requestId,
+          status: "payment_rejected",
+          rejection_reason: rejectionReason || null,
+        }, { onConflict: "request_id" });
+      if (payError) return { success: false, error: payError.message };
+    }
+    // Send email notification
+    await sendRequestStatusEmail(requestId, action === "accept" ? "paid" : "payment_rejected");
+    return { success: true };
+  } catch (e: any) {
+    console.warn("adminVerifyPayment error:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+/**
  * Upload file to Supabase Storage with local data URL fallback
  */
 export async function uploadToStorage(
@@ -396,17 +467,104 @@ export async function submitBuyerPayment(params: {
     if (user) userId = user.id;
   } catch {}
 
-  // Update request status to paid
-  await updateRequestStatus(params.request_id, "paid");
+  // 1. Insert into payments table
+  const { data: paymentData, error: paymentErr } = await supabase
+    .from("payments")
+    .insert({
+      request_id: params.request_id,
+      user_id: userId,
+      bank_account: params.bank_account,
+      proof_url: finalProofUrl,
+      amount: params.amount,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (paymentErr) {
+    console.error("Error creating payment record:", paymentErr);
+    throw new Error(paymentErr.message);
+  }
+
+  // 2. Update request status to verifying
+  await updateRequestStatus(params.request_id, "verifying");
 
   return {
-    id: `PAY-${Date.now()}`,
-    request_id: params.request_id,
-    user_id: userId,
-    bank_account: params.bank_account,
-    proof_url: finalProofUrl,
-    amount: params.amount,
+    id: paymentData.id,
+    request_id: paymentData.request_id,
+    user_id: paymentData.user_id,
+    bank_account: paymentData.bank_account,
+    proof_url: paymentData.proof_url,
+    amount: Number(paymentData.amount),
   };
+}
+
+/**
+ * Fetch the latest payment submitted for a request
+ */
+export async function fetchLatestPayment(requestId: string): Promise<any | null> {
+  const supabase = createClient();
+  try {
+    const { data, error } = await supabase
+      .from("payments")
+      .select("*")
+      .eq("request_id", requestId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (!error && data && data.length > 0) {
+      return data[0];
+    }
+  } catch (e) {
+    console.error("Error fetching latest payment:", e);
+  }
+  return null;
+}
+
+/**
+ * Verify payment proof by admin
+ */
+export async function verifyPayment(
+  requestId: string,
+  paymentId: string,
+  action: "approve" | "reject",
+  rejectionReason?: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient();
+
+  try {
+    const paymentStatus = action === "approve" ? "approved" : "rejected";
+    const requestStatus = action === "approve" ? "paid" : "payment_rejected";
+
+    // 1. Update payments table
+    const { error: err1 } = await supabase
+      .from("payments")
+      .update({
+        status: paymentStatus,
+        rejection_reason: action === "reject" ? (rejectionReason || "Bukti transfer tidak valid/jelas.") : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", paymentId);
+
+    if (err1) throw err1;
+
+    // 2. Update item_requests table
+    const { error: err2 } = await supabase
+      .from("item_requests")
+      .update({
+        status: requestStatus,
+        rejection_reason: action === "reject" ? (rejectionReason || "Pembayaran ditolak oleh admin.") : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", requestId);
+
+    if (err2) throw err2;
+
+    return { success: true };
+  } catch (e: any) {
+    console.error("Error verifying payment:", e);
+    return { success: false, error: e.message };
+  }
 }
 
 /**

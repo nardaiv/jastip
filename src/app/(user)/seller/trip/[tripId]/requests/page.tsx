@@ -16,7 +16,7 @@ interface ItemRequest {
   description: string | null;
   quantity: number;
   image_url: string | null;
-  status: "pending" | "accepted" | "rejected" | "purchased" | "paid" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "accepted" | "rejected" | "purchased" | "paid" | "verifying" | "shipped" | "delivered" | "cancelled";
   total_price: number | null;
   profiles: {
     full_name: string | null;
@@ -69,7 +69,7 @@ export default function TripRequestsPage() {
         profiles:buyer_id (full_name, phone_number)
       `)
       .eq("trip_id", tripId)
-      .in("status", ["pending", "accepted", "purchased", "paid"])
+      .in("status", ["pending", "accepted", "verifying", "purchased", "paid"])
       .order("created_at", { ascending: false });
 
     if (!error && data) {
@@ -156,6 +156,7 @@ export default function TripRequestsPage() {
             {requests.map((req) => {
               const isPending = req.status === "pending";
               const isAccepted = req.status === "accepted";
+              const isVerifying = req.status === "verifying";
               const isPaid = req.status === "paid";
               const isPurchased = req.status === "purchased";
 
@@ -217,6 +218,12 @@ export default function TripRequestsPage() {
                       </span>
                     )}
 
+                    {isVerifying && (
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full text-amber-500 bg-amber-50/80 flex items-center gap-1.5 dark:bg-amber-500/10 animate-pulse">
+                        <Clock className="w-3 h-3" /> IN VERIFICATION
+                      </span>
+                    )}
+
                     {isPaid && (
                       <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full text-emerald-600 bg-emerald-50/80 flex items-center gap-1.5 dark:bg-emerald-500/10">
                         <CheckCircle2 className="w-3 h-3" /> PAID
@@ -242,6 +249,15 @@ export default function TripRequestsPage() {
                           className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-blue-50 text-blue-700 opacity-80 cursor-not-allowed border-none ring-0"
                         >
                           <Clock className="w-4 h-4" /> Menunggu Pembayaran Buyer
+                        </Button>
+                      )}
+
+                      {isVerifying && (
+                        <Button
+                          disabled
+                          className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-amber-50 text-amber-700 opacity-80 cursor-not-allowed border-none ring-0"
+                        >
+                          <Clock className="w-4 h-4" /> Pembayaran Buyer Sedang Diverifikasi Admin
                         </Button>
                       )}
 

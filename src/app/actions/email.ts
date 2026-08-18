@@ -138,6 +138,22 @@ export async function sendRequestStatusEmail(itemRequestId: string, newStatus: s
         statusColor = "#3b82f6";
         statusLabel = "Disetujui / Penawaran Harga";
         break;
+      case "verifying":
+        recipientEmail = buyerEmail;
+        recipientName = buyerName;
+        subject = `[Jastip] Pembayaran Sedang Diverifikasi: ${item_name}`;
+        messageBody = `Halo <strong>${buyerName}</strong>,<br/><br/>Bukti transfer pembayaran Anda untuk <strong>"${item_name}"</strong> sedang diverifikasi oleh administrator.<br/>Kami akan segera mengabari Anda setelah pembayaran disetujui.`;
+        statusColor = "#f59e0b";
+        statusLabel = "Dalam Verifikasi";
+        break;
+      case "payment_rejected":
+        recipientEmail = buyerEmail;
+        recipientName = buyerName;
+        subject = `[Jastip] Pembayaran Ditolak Admin: ${item_name}`;
+        messageBody = `Halo <strong>${buyerName}</strong>,<br/><br/>Bukti pembayaran Anda untuk barang <strong>"${item_name}"</strong> ditolak oleh administrator.<br/>Silakan masuk ke Dashboard Buyer Anda untuk melakukan transfer ulang dan mengunggah bukti yang benar.`;
+        statusColor = "#ef4444";
+        statusLabel = "Pembayaran Ditolak";
+        break;
       case "paid":
         recipientEmail = sellerEmail;
         recipientName = sellerName;

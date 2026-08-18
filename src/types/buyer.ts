@@ -3,6 +3,7 @@ export type RequestStatus =
   | "accepted"
   | "purchased"
   | "paid"
+  | "verifying"
   | "shipped"
   | "delivered"
   | "rejected"
@@ -43,6 +44,10 @@ export interface BuyerRequest {
   weight_unit?: string | null;
   status: RequestStatus;
   created_at?: string;
+  latest_payment?: {
+    status: string;
+    rejection_reason: string | null;
+  } | null;
 }
 
 export interface Payment {

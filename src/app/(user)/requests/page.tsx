@@ -72,7 +72,7 @@ export default function RequestsPage() {
     if (filterStatus === "all") return true;
     if (filterStatus === "pending") return r.status === "pending";
     if (filterStatus === "accepted") return r.status === "accepted";
-    if (filterStatus === "paid") return ["paid", "purchased"].includes(r.status);
+    if (filterStatus === "paid") return ["paid", "purchased", "verifying"].includes(r.status);
     if (filterStatus === "shipped") return ["shipped", "delivered"].includes(r.status);
     if (filterStatus === "cancelled") return ["cancelled", "rejected"].includes(r.status);
     return true;
@@ -209,6 +209,12 @@ export default function RequestsPage() {
                           Accepted
                         </span>
                       )}
+                      {item.status === "verifying" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 uppercase tracking-wider animate-pulse">
+                          <Clock className="w-3.5 h-3.5" />
+                          Verifikasi
+                        </span>
+                      )}
                       {item.status === "paid" && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-wise-green-pale text-ink-deep border border-primary/20 uppercase tracking-wider">
                           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -260,20 +266,37 @@ export default function RequestsPage() {
                       )}
 
                       {item.status === "accepted" && (
-                        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                          <Link
-                            href={`/confirmation?id=${item.id}`}
-                            className="button-primary text-sm py-2 px-4 text-center cursor-pointer"
-                          >
-                            ✓ Konfirmasi & Bayar
-                          </Link>
-                          <button
-                            onClick={() => handleCancelRequest(item.id)}
-                            disabled={cancellingId === item.id}
-                            className="button-tertiary text-sm py-2 px-4 cursor-pointer text-center text-negative border-negative hover:bg-negative-bg animate-all active:scale-95"
-                          >
-                            {cancellingId === item.id ? "Membatalkan..." : "Batalkan Request"}
-                          </button>
+                        <div className="flex flex-col gap-2 items-stretch sm:items-end w-full lg:w-auto">
+                          <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                            <Link
+                              href={`/confirmation?id=${item.id}`}
+                              className="button-primary text-sm py-2 px-4 text-center cursor-pointer"
+                            >
+                              ✓ Konfirmasi & Bayar
+                            </Link>
+                            <button
+                              onClick={() => handleCancelRequest(item.id)}
+                              disabled={cancellingId === item.id}
+                              className="button-tertiary text-sm py-2 px-4 cursor-pointer text-center text-negative border-negative hover:bg-negative-bg animate-all active:scale-95"
+                            >
+                              {cancellingId === item.id ? "Membatalkan..." : "Batalkan Request"}
+                            </button>
+                          </div>
+                          {item.latest_payment?.status === "rejected" && (
+                            <div className="text-caption text-negative bg-negative-bg px-4 py-2.5 rounded-xl border border-negative/20 text-left font-medium flex items-start gap-1.5 mt-1 max-w-sm">
+                              <AlertTriangle className="w-4 h-4 animate-bounce shrink-0 mt-0.5" />
+                              <span>
+                                <strong>Pembayaran Ditolak Admin:</strong> "{item.latest_payment.rejection_reason || "Bukti transfer tidak valid/jelas"}"
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {item.status === "verifying" && (
+                        <div className="text-caption text-amber-600 bg-amber-500/10 px-4 py-2.5 rounded-xl border border-amber-500/20 text-center lg:text-right font-medium flex items-center gap-1.5">
+                          <Clock className="w-4 h-4" />
+                          Pembayaran sedang diverifikasi oleh Admin.
                         </div>
                       )}
 
