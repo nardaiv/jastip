@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
-import { Package, Clock, CheckCircle2, Truck, ArrowLeft, Image as ImageIcon } from "lucide-react";
+import { Package, Clock, CheckCircle2, Truck, ArrowLeft, Image as ImageIcon, Check } from "lucide-react";
 import { shipItemWithFedEx } from "@/app/actions/shipping";
 import { sendRequestStatusEmail, updateRequestStatusAction } from "@/app/actions/email";
 
@@ -16,7 +16,7 @@ interface ItemRequest {
   description: string | null;
   quantity: number;
   image_url: string | null;
-  status: "pending" | "accepted" | "rejected" | "purchased" | "paid" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "accepted" | "rejected" | "purchased" | "paid" | "verifying" | "shipped" | "delivered" | "cancelled";
   total_price: number | null;
   profiles: {
     full_name: string | null;
@@ -28,10 +28,25 @@ export default function TripRequestsPage() {
   const params = useParams();
   const router = useRouter();
   const tripId = params.tripId as string;
-  
+
   const [requests, setRequests] = useState<ItemRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [alertInfo, setAlertInfo] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({
+    show: false,
+    title: "",
+    message: "",
+    type: "info",
+  });
+
+  const showAlert = (title: string, message: string, type: "success" | "error" | "info" = "info") => {
+    setAlertInfo({ show: true, title, message, type });
+  };
 
   useEffect(() => {
     fetchRequests();
@@ -40,7 +55,7 @@ export default function TripRequestsPage() {
   async function fetchRequests() {
     setLoading(true);
     const supabase = createClient();
-    
+
     const { data, error } = await supabase
       .from("item_requests")
       .select(`
@@ -54,7 +69,7 @@ export default function TripRequestsPage() {
         profiles:buyer_id (full_name, phone_number)
       `)
       .eq("trip_id", tripId)
-      .in("status", ["pending", "accepted", "purchased", "paid"])
+      .in("status", ["pending", "accepted", "verifying", "purchased", "paid"])
       .order("created_at", { ascending: false });
 
     if (!error && data) {
@@ -73,7 +88,7 @@ export default function TripRequestsPage() {
         prev.map((req) => (req.id === requestId ? { ...req, status: "purchased" } : req))
       );
     } else {
-      alert(`Gagal mengubah status ke purchased: ${res.error}`);
+      showAlert("Gagal", `Gagal mengubah status ke purchased: ${res.error}`, "error");
     }
   };
 
@@ -82,14 +97,14 @@ export default function TripRequestsPage() {
     try {
       const res = await shipItemWithFedEx(requestId);
       if (res.success) {
-        alert(`Pengiriman FedEx berhasil diproses! Resi: ${res.trackingNumber}`);
+        showAlert("Sukses", `Pengiriman FedEx berhasil diproses! Resi: ${res.trackingNumber}`, "success");
         setRequests((prev) => prev.filter((req) => req.id !== requestId));
       } else {
-        alert("Gagal memproses pengiriman FedEx.");
+        showAlert("Gagal", "Gagal memproses pengiriman FedEx.", "error");
       }
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "Terjadi kesalahan saat memproses FedEx.");
+      showAlert("Error", err.message || "Terjadi kesalahan saat memproses FedEx.", "error");
     } finally {
       setProcessingId(null);
     }
@@ -98,13 +113,13 @@ export default function TripRequestsPage() {
   return (
     <div className="min-h-screen bg-muted/20 pb-24 pt-8">
       <div className="max-w-5xl mx-auto px-6 space-y-8">
-        
+
         {/* Header Tanpa Border Bawah */}
         <div className="flex flex-col gap-4 pb-4">
           <div className="flex items-start gap-4">
-            <Button 
-              variant="outline" 
-              size="icon" 
+            <Button
+              variant="outline"
+              size="icon"
               className="rounded-full shrink-0 h-10 w-10 border-none shadow-sm bg-background hover:bg-muted ring-0"
               onClick={() => router.push("/seller/trip")}
             >
@@ -141,9 +156,10 @@ export default function TripRequestsPage() {
             {requests.map((req) => {
               const isPending = req.status === "pending";
               const isAccepted = req.status === "accepted";
+              const isVerifying = req.status === "verifying";
               const isPaid = req.status === "paid";
               const isPurchased = req.status === "purchased";
-              
+
               const buyerInfo = req.profiles?.phone_number || req.profiles?.full_name || "Unknown";
 
               return (
@@ -170,7 +186,7 @@ export default function TripRequestsPage() {
                           x{req.quantity}
                         </span>
                       </div>
-                      
+
                       <p className="text-sm text-muted-foreground line-clamp-2 pr-4">
                         {req.description || "Tidak ada catatan dari pembeli."}
                       </p>
@@ -183,7 +199,7 @@ export default function TripRequestsPage() {
 
                   {/* Status & Aksi Kanan */}
                   <div className="flex flex-col items-end justify-between gap-4 w-full md:w-auto h-full self-stretch md:self-auto mt-2 md:mt-0">
-                    
+
                     {isPending && (
                       <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full text-blue-500 bg-blue-50/80 dark:bg-blue-500/10">
                         PENDING
@@ -195,10 +211,16 @@ export default function TripRequestsPage() {
                         <Clock className="w-3 h-3" /> ACCEPTED
                       </span>
                     )}
-                    
+
                     {isPurchased && (
                       <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full text-amber-500 bg-amber-50/80 flex items-center gap-1.5 dark:bg-amber-500/10">
                         <Clock className="w-3 h-3" /> PURCHASED
+                      </span>
+                    )}
+
+                    {isVerifying && (
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full text-amber-500 bg-amber-50/80 flex items-center gap-1.5 dark:bg-amber-500/10 animate-pulse">
+                        <Clock className="w-3 h-3" /> IN VERIFICATION
                       </span>
                     )}
 
@@ -230,6 +252,15 @@ export default function TripRequestsPage() {
                         </Button>
                       )}
 
+                      {isVerifying && (
+                        <Button
+                          disabled
+                          className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-amber-50 text-amber-700 opacity-80 cursor-not-allowed border-none ring-0"
+                        >
+                          <Clock className="w-4 h-4" /> Pembayaran Buyer Sedang Diverifikasi Admin
+                        </Button>
+                      )}
+
                       {isPaid && (
                         <Button
                           onClick={() => handleMarkAsPurchased(req.id)}
@@ -247,7 +278,7 @@ export default function TripRequestsPage() {
                           disabled={processingId === req.id}
                           className="w-full md:w-auto h-11 px-6 rounded-full font-semibold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm border-none ring-0"
                         >
-                          <Truck className="w-4 h-4" /> 
+                          <Truck className="w-4 h-4" />
                           {processingId === req.id ? "Memproses..." : "Kirim dengan FedEx"}
                         </Button>
                       )}
@@ -259,6 +290,36 @@ export default function TripRequestsPage() {
           </div>
         )}
       </div>
+
+      {/* Premium Alert/Toast Dialog */}
+      {alertInfo.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs transition-opacity animate-in fade-in">
+          <div className="bg-card border border-canvas-soft dark:border-zinc-800 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${alertInfo.type === "success"
+                ? "bg-wise-green-pale text-ink"
+                : alertInfo.type === "error"
+                  ? "bg-negative-bg text-negative border border-negative/20"
+                  : "bg-muted text-muted-foreground"
+                }`}>
+                {alertInfo.type === "success" ? <><Check /></> : alertInfo.type === "error" ? "✕" : "i"}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-foreground text-lg leading-tight">{alertInfo.title}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{alertInfo.message}</p>
+              </div>
+            </div>
+            <div className="pt-2 flex justify-end">
+              <Button
+                onClick={() => setAlertInfo(prev => ({ ...prev, show: false }))}
+                className="button-primary px-5 py-2 text-xs font-bold rounded-xl h-9"
+              >
+                Tutup
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

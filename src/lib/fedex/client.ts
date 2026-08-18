@@ -7,72 +7,72 @@ let tokenExpiresAt: number = 0;
  * Retrieves an active OAuth 2.0 Bearer token, renewing only when expired.
  */
 export async function getFedExToken(): Promise<string> {
-    const now = Date.now();
+  const now = Date.now();
 
-    // Return cached token if valid for at least another 60 seconds
-    if (cachedToken && tokenExpiresAt > now + 60_000) {
-        return cachedToken;
-    }
+  // Return cached token if valid for at least another 60 seconds
+  if (cachedToken && tokenExpiresAt > now + 60_000) {
+    return cachedToken;
+  }
 
-    const params = new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: process.env.FEDEX_CLIENT_ID ?? '',
-        client_secret: process.env.FEDEX_CLIENT_SECRET ?? '',
-    });
+  const params = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: process.env.FEDEX_CLIENT_ID ?? '',
+    client_secret: process.env.FEDEX_CLIENT_SECRET ?? '',
+  });
 
-    const res = await fetch(`${FEDEX_BASE_URL}/oauth/token`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params.toString(),
-    });
+  const res = await fetch(`${FEDEX_BASE_URL}/oauth/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
 
-    if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`FedEx OAuth failed (${res.status}): ${errorText}`);
-    }
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`FedEx OAuth failed (${res.status}): ${errorText}`);
+  }
 
-    const data = await res.json();
-    cachedToken = data.access_token;
-    tokenExpiresAt = now + data.expires_in * 1000;
+  const data = await res.json();
+  cachedToken = data.access_token;
+  tokenExpiresAt = now + data.expires_in * 1000;
 
-    return cachedToken as string;
+  return cachedToken as string;
 }
 
 /**
  * Example: Track a package using the FedEx Track API
  */
 export async function trackShipment(trackingNumber: string) {
-    const token = await getFedExToken();
+  const token = await getFedExToken();
 
-    const payload = {
-        includeDetailedScans: true,
-        trackingInfo: [
-            {
-                trackingNumberInfo: {
-                    trackingNumber: trackingNumber.trim(),
-                },
-            },
-        ],
-    };
-
-    const res = await fetch(`${FEDEX_BASE_URL}/track/v1/trackingnumbers`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'X-locale': 'en_US',
+  const payload = {
+    includeDetailedScans: true,
+    trackingInfo: [
+      {
+        trackingNumberInfo: {
+          trackingNumber: trackingNumber.trim(),
         },
-        body: JSON.stringify(payload),
-    });
+      },
+    ],
+  };
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error?.errors?.[0]?.message || 'Failed to track package');
-    }
+  const res = await fetch(`${FEDEX_BASE_URL}/track/v1/trackingnumbers`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-locale': 'en_US',
+    },
+    body: JSON.stringify(payload),
+  });
 
-    return res.json();
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error?.errors?.[0]?.message || 'Failed to track package');
+  }
+
+  return res.json();
 }
 
 export async function getFedExRates(params: {
@@ -132,6 +132,49 @@ export async function getFedExRates(params: {
   }
 
   return res.json();
+}
+
+/**
+ * Helper to convert arbitrary currency to USD for FedEx Customs Clearance
+ */
+async function convertToUSD(amount: number, fromCurrency: string): Promise<number> {
+  const currency = fromCurrency.toUpperCase();
+  if (currency === "USD") return amount;
+
+  // Hardcoded fallback exchange rates (1 USD = X Currency)
+  const fallbackRates: Record<string, number> = {
+    IDR: 15000,
+    JPY: 150,
+    SGD: 1.34,
+    KRW: 1350,
+  };
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${currency}&symbols=USD`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.rates && data.rates.USD) {
+        const rate = data.rates.USD;
+        const converted = amount * rate;
+        return Math.round(converted * 100) / 100;
+      }
+    }
+  } catch (error) {
+    console.warn(`Failed to fetch exchange rate for ${currency} from API, using fallback.`, error);
+  }
+
+  const divisor = fallbackRates[currency];
+  if (divisor) {
+    const converted = amount / divisor;
+    return Math.round(converted * 100) / 100;
+  }
+
+  return amount;
 }
 
 /**
@@ -238,8 +281,8 @@ export async function createFedExShipment(params: {
     let valAmount = params.declaredValue || 10;
     let valCurrency = params.declaredCurrency || "USD";
 
-    if (valCurrency === "IDR") {
-      valAmount = Math.round(valAmount / 15000);
+    if (valCurrency !== "USD") {
+      valAmount = await convertToUSD(valAmount, valCurrency);
       valCurrency = "USD";
     }
     if (valAmount <= 0) valAmount = 10;

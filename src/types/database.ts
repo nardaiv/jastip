@@ -42,6 +42,7 @@ export const RequestStatusSchema = z.enum([
   "rejected",
   "purchased",
   "paid",       // Ditambahkan: Menandakan Admin sudah konfirmasi pembayaran
+  "verifying",  // Ditambahkan: Menandakan Pembayaran sedang diverifikasi oleh Admin
   "shipped",    // Ditambahkan: Menandakan Seller sudah menekan tombol Kirim
   "delivered",
   "cancelled",
