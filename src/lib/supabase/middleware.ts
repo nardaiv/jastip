@@ -30,8 +30,13 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
 
+  // Protected buyer paths
+  const isBuyerPath = path === "/payment" || path.startsWith("/payment/") ||
+    path === "/request" || path.startsWith("/request/") ||
+    path === "/requests" || path.startsWith("/requests/");
+
   // Redirect unauthenticated users trying to access protected paths
-  if (!user && (path.startsWith("/dashboard") || path.startsWith("/admin"))) {
+  if (!user && (path.startsWith("/dashboard") || path.startsWith("/admin") || isBuyerPath)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -52,6 +57,25 @@ export async function updateSession(request: NextRequest) {
       url.pathname = "/dashboard";
     }
     return NextResponse.redirect(url);
+  }
+
+  // Restrict buyer paths strictly to users with the buyer role
+  if (user && isBuyerPath) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "buyer") {
+      const url = request.nextUrl.clone();
+      if (profile?.role === "admin") {
+        url.pathname = "/admin";
+      } else {
+        url.pathname = "/dashboard";
+      }
+      return NextResponse.redirect(url);
+    }
   }
 
   // Restrict /admin route strictly to users with the admin role
