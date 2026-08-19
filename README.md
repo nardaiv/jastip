@@ -46,6 +46,9 @@ Platform untuk mempermudah proses jasa penitipan pembelian barang. Dengan memanf
    FEDEX_CLIENT_SECRET=
    FEDEX_ACCOUNT_NUMBER=
    
+   FEDEX_TRACKING_CLIENT_SECRET=
+   FEDEX_TRACKING_CLIENT_ID=
+
    SMTP_USER=
    SMTP_PASS=
    ```
