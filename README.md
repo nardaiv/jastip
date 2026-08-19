@@ -51,7 +51,7 @@ Platform untuk mempermudah proses jasa penitipan pembelian barang. Dengan memanf
    ```
 
 4. Setup database
-    Buka project supabase, lalu click SQL EDITOR lalu jalankan command berikut untuk membuat table dan permission sesuai [struktur yang dibutuhkan](#schema-supabase--storage)
+    Buka project supabase, lalu click SQL EDITOR lalu jalankan command berikut untuk membuat table dan permission sesuai [struktur yang dibutuhkan](#schema-pada-database)
 
     <details>
     <summary>Command SQL</summary>
@@ -299,7 +299,7 @@ Platform untuk mempermudah proses jasa penitipan pembelian barang. Dengan memanf
     CREATE POLICY "Users can manage their own addresses" ON public.shipping_addresses USING ((auth.uid() = user_id) OR (public.get_auth_role() = 'admin'::public.user_role));
 
     -- Trips
-    CREATE POLICY "Authenticated users can view trips" ON public.trips FOR SELECT USING (auth.role() = 'authenticated');
+    CREATE POLICY "Trips are readable by everyone" ON public.trips FOR SELECT USING (true);
     CREATE POLICY "Sellers can create trips" ON public.trips FOR INSERT WITH CHECK ((auth.uid() = seller_id) AND (public.get_auth_role() IN ('seller'::public.user_role, 'admin'::public.user_role)));
     CREATE POLICY "Sellers can update own trips" ON public.trips FOR UPDATE USING ((auth.uid() = seller_id) OR (public.get_auth_role() = 'admin'::public.user_role));
 

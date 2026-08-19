@@ -9,10 +9,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-display: var(--font-work-sans), var(--font-inter), system-ui, -apple-system, sans-serif;
-  
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  
+
   /* Wise Custom Semantic Brand Palette */
   --color-wise-green: #9fe870;
   --color-wise-green-active: #cdffad;
@@ -24,7 +24,7 @@
   --color-mute: #868685;
   --color-canvas: #ffffff;
   --color-canvas-soft: #e8ebe6;
-  
+
   --color-positive: #2ead4b;
   --color-positive-deep: #054d28;
   --color-warning: #ffd11a;
@@ -34,7 +34,7 @@
   --color-negative-deep: #a72027;
   --color-negative-darkest: #a7000d;
   --color-negative-bg: #320707;
-  
+
   --color-accent-orange: #ffc091;
   --color-accent-cyan: #38c8ff;
 
@@ -80,34 +80,34 @@
 :root {
   --background: #e8ebe6;
   --foreground: #0e0f0c;
-  
+
   --card: #ffffff;
   --card-foreground: #0e0f0c;
-  
+
   --popover: #ffffff;
   --popover-foreground: #0e0f0c;
-  
+
   --primary: #9fe870;
   --primary-foreground: #0e0f0c;
-  
+
   --secondary: #e8ebe6;
   --secondary-foreground: #0e0f0c;
-  
+
   --muted: #e8ebe6;
   --muted-foreground: #868685;
-  
+
   --accent: #cdffad;
   --accent-foreground: #0e0f0c;
-  
+
   --destructive: #d03238;
   --destructive-foreground: #ffffff;
-  
+
   --border: #0e0f0c;
   --input: #0e0f0c;
   --ring: #9fe870;
-  
+
   --radius: 24px;
-  
+
   --sidebar: #ffffff;
   --sidebar-foreground: #0e0f0c;
   --sidebar-primary: #9fe870;
@@ -121,32 +121,32 @@
 .dark {
   --background: #0e0f0c;
   --foreground: #ffffff;
-  
+
   --card: #161814;
   --card-foreground: #ffffff;
-  
+
   --popover: #161814;
   --popover-foreground: #ffffff;
-  
+
   --primary: #9fe870;
   --primary-foreground: #0e0f0c;
-  
+
   --secondary: #1e201c;
   --secondary-foreground: #ffffff;
-  
+
   --muted: #1e201c;
   --muted-foreground: #868685;
-  
+
   --accent: #cdffad;
   --accent-foreground: #0e0f0c;
-  
+
   --destructive: #d03238;
   --destructive-foreground: #ffffff;
-  
+
   --border: #383a36;
   --input: #383a36;
   --ring: #9fe870;
-  
+
   --sidebar: #161814;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #9fe870;
@@ -374,11 +374,8 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-    scroll-behavior: smooth;
   }
 }
