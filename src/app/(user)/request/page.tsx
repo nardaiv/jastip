@@ -17,7 +17,42 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Phone, PlaneTakeoff, PlaneLanding, Plane, AlertTriangle, Check } from "lucide-react";
+
+const FRANKFURTER_CURRENCIES = [
+  { value: "IDR", label: "IDR (Rupiah Indonesia)" },
+  { value: "USD", label: "USD (Dolar Amerika Serikat)" },
+  { value: "SGD", label: "SGD (Dolar Singapura)" },
+  { value: "JPY", label: "JPY (Yen Jepang)" },
+  { value: "KRW", label: "KRW (Won Korea Selatan)" },
+  { value: "EUR", label: "EUR (Euro)" },
+  { value: "GBP", label: "GBP (Pound Inggris)" },
+  { value: "AUD", label: "AUD (Dolar Australia)" },
+  { value: "CAD", label: "CAD (Dolar Kanada)" },
+  { value: "CHF", label: "CHF (Franc Swiss)" },
+  { value: "CNY", label: "CNY (Yuan Tiongkok)" },
+  { value: "HKD", label: "HKD (Dolar Hong Kong)" },
+  { value: "MYR", label: "MYR (Ringgit Malaysia)" },
+  { value: "PHP", label: "PHP (Peso Filipina)" },
+  { value: "THB", label: "THB (Baht Thailand)" },
+  { value: "NZD", label: "NZD (Dolar Selandia Baru)" },
+  { value: "INR", label: "INR (Rupee India)" },
+  { value: "BRL", label: "BRL (Real Brasil)" },
+  { value: "MXN", label: "MXN (Peso Meksiko)" },
+  { value: "TRY", label: "TRY (Lira Turki)" },
+  { value: "ZAR", label: "ZAR (Rand Afrika Selatan)" },
+  { value: "SEK", label: "SEK (Krona Swedia)" },
+  { value: "NOK", label: "NOK (Krone Norwegia)" },
+  { value: "DKK", label: "DKK (Krone Denmark)" },
+  { value: "PLN", label: "PLN (Zloty Polandia)" },
+  { value: "CZK", label: "CZK (Koruna Ceko)" },
+  { value: "HUF", label: "HUF (Forint Hungaria)" },
+  { value: "RON", label: "RON (Leu Rumania)" },
+  { value: "BGN", label: "BGN (Lev Bulgaria)" },
+  { value: "ISK", label: "ISK (Krona Islandia)" },
+  { value: "ILS", label: "ILS (New Shekel Israel)" }
+];
 import {
   AlertDialog,
   AlertDialogContent,
@@ -370,21 +405,13 @@ function RequestFormContent() {
                     Mata Uang
                   </Label>
                   {formData.currency && (
-                    <Select
+                    <SearchableSelect
+                      options={FRANKFURTER_CURRENCIES}
                       value={formData.currency}
                       onValueChange={(val) => setFormData((prev) => ({ ...prev, currency: val || "IDR" }))}
-                    >
-                      <SelectTrigger className="w-full h-11 bg-background border border-border/20 rounded-xl px-4">
-                        <SelectValue placeholder="Mata Uang" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="IDR">IDR (Rupiah)</SelectItem>
-                        <SelectItem value="JPY">JPY (Yen Jepang)</SelectItem>
-                        <SelectItem value="SGD">SGD (Dolar Singapura)</SelectItem>
-                        <SelectItem value="USD">USD (Dolar AS)</SelectItem>
-                        <SelectItem value="KRW">KRW (Won Korea)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder="Pilih Mata Uang"
+                      searchPlaceholder="Cari mata uang..."
+                    />
                   )}
                 </div>
               </div>

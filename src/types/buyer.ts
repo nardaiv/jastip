@@ -43,6 +43,7 @@ export interface BuyerRequest {
   weight_value?: number | null;
   weight_unit?: string | null;
   status: RequestStatus;
+  rejection_reason?: string | null;
   created_at?: string;
   latest_payment?: {
     status: string;

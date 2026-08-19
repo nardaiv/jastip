@@ -222,8 +222,8 @@ function PaymentContent() {
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
                 className={`relative flex flex-col items-center justify-center min-h-[180px] p-6 text-center border-2 border-dashed rounded-2xl transition-all duration-200 cursor-pointer select-none group
-                  ${isDragActive 
-                    ? "border-primary bg-primary/10 scale-[1.01] shadow-inner" 
+                  ${isDragActive
+                    ? "border-primary bg-primary/10 scale-[1.01] shadow-inner"
                     : "border-border/15 bg-canvas-soft/30 hover:bg-canvas-soft/60 hover:border-primary/50"
                   }`}
               >
@@ -353,13 +353,7 @@ function PaymentContent() {
             {/* Tombol aksi */}
             <div className="pt-2 flex flex-col sm:flex-row gap-3">
               <Link
-                href={`/tracking/${encodeURIComponent(item?.id || reqId)}`}
-                className="flex-1 button-primary text-center transition-all active:scale-95"
-              >
-                <Package className="mb 5" /> Lacak Pesanan Sekarang
-              </Link>
-              <Link
-                href="/"
+                href="/dashboard"
                 className="flex-1 button-secondary text-center transition-all active:scale-95"
               >
                 Kembali ke Dashboard

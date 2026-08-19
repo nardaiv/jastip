@@ -16,6 +16,51 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+
+const FRANKFURTER_COUNTRIES = [
+  { value: "ID", label: "Indonesia (ID)" },
+  { value: "US", label: "Amerika Serikat (US)" },
+  { value: "SG", label: "Singapura (SG)" },
+  { value: "JP", label: "Jepang (JP)" },
+  { value: "KR", label: "Korea Selatan (KR)" },
+  { value: "MY", label: "Malaysia (MY)" },
+  { value: "PH", label: "Filipina (PH)" },
+  { value: "TH", label: "Thailand (TH)" },
+  { value: "IN", label: "India (IN)" },
+  { value: "CN", label: "Tiongkok / China (CN)" },
+  { value: "HK", label: "Hong Kong (HK)" },
+  { value: "GB", label: "Inggris Raya / United Kingdom (GB)" },
+  { value: "AU", label: "Australia (AU)" },
+  { value: "NZ", label: "Selandia Baru (NZ)" },
+  { value: "CA", label: "Kanada (CA)" },
+  { value: "CH", label: "Swiss (CH)" },
+  { value: "TR", label: "Turki (TR)" },
+  { value: "BR", label: "Brasil (BR)" },
+  { value: "MX", label: "Meksiko (MX)" },
+  { value: "ZA", label: "Afrika Selatan (ZA)" },
+  { value: "SE", label: "Swedia (SE)" },
+  { value: "NO", label: "Norwegia (NO)" },
+  { value: "DK", label: "Denmark (DK)" },
+  { value: "PL", label: "Polandia (PL)" },
+  { value: "CZ", label: "Ceko (CZ)" },
+  { value: "HU", label: "Hungaria (HU)" },
+  { value: "RO", label: "Rumania (RO)" },
+  { value: "BG", label: "Bulgaria (BG)" },
+  { value: "IS", label: "Islandia (IS)" },
+  { value: "IL", label: "Israel (IL)" },
+  { value: "DE", label: "Jerman (DE)" },
+  { value: "FR", label: "Prancis (FR)" },
+  { value: "IT", label: "Italia (IT)" },
+  { value: "ES", label: "Spanyol (ES)" },
+  { value: "NL", label: "Belanda (NL)" },
+  { value: "BE", label: "Belgia (BE)" },
+  { value: "AT", label: "Austria (AT)" },
+  { value: "IE", label: "Irlandia (IE)" },
+  { value: "PT", label: "Portugal (PT)" },
+  { value: "FI", label: "Finlandia (FI)" },
+  { value: "GR", label: "Yunani (GR)" }
+];
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   createShippingAddress, 
@@ -36,6 +81,68 @@ const AddressFormSchema = z.object({
   country_code: z.string().length(2, "Kode negara harus 2 huruf (contoh: ID, US)"),
   is_residential: z.boolean().default(true),
   is_default: z.boolean().default(false),
+}).superRefine((data, ctx) => {
+  const cc = data.country_code.toUpperCase();
+  const pc = data.postal_code.trim();
+
+  if (cc === "ID") {
+    if (!/^\d{5}$/.test(pc)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["postal_code"],
+        message: "Kode pos Indonesia harus 5 digit angka (contoh: 10110)",
+      });
+    }
+  } else if (cc === "SG") {
+    if (!/^\d{6}$/.test(pc)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["postal_code"],
+        message: "Kode pos Singapura harus 6 digit angka (contoh: 018981)",
+      });
+    }
+  } else if (cc === "KR") {
+    if (!/^\d{5}$/.test(pc)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["postal_code"],
+        message: "Kode pos Korea Selatan harus 5 digit angka (contoh: 03045)",
+      });
+    }
+  } else if (cc === "JP") {
+    const cleanJp = pc.replace(/[^\d]/g, "");
+    if (cleanJp.length !== 7) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["postal_code"],
+        message: "Kode pos Jepang harus 7 digit angka (contoh: 100-0001)",
+      });
+    }
+  } else if (cc === "US") {
+    if (!/^\d{5}(-\d{4})?$/.test(pc)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["postal_code"],
+        message: "Kode pos Amerika Serikat harus 5 digit (atau 5-4 digit) angka (contoh: 97477)",
+      });
+    }
+    if (!data.state_or_province_code || data.state_or_province_code.trim().length !== 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["state_or_province_code"],
+        message: "Kode negara bagian (state) 2 huruf wajib diisi untuk Amerika Serikat (contoh: OR)",
+      });
+    }
+  } else {
+    // Generic validation for other countries: alphanumeric, spaces, and hyphens (3-10 characters)
+    if (!/^[a-zA-Z0-9\s-]{3,10}$/.test(pc)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["postal_code"],
+        message: "Format kode pos tidak valid (harus 3-10 karakter berupa angka, huruf, spasi atau tanda hubung)",
+      });
+    }
+  }
 });
 
 type AddressFormValues = z.infer<typeof AddressFormSchema>;
@@ -458,16 +565,18 @@ export function AddressManager({ userId, initialAddresses }: AddressManagerProps
 
               <div className="space-y-1.5 flex flex-col">
                 <Label htmlFor="country_code" className="text-body-sm-strong text-ink dark:text-zinc-300">
-                  Negara (2 Huruf)
+                  Negara
                 </Label>
-                <Input
-                  id="country_code"
+                <SearchableSelect
+                  options={FRANKFURTER_COUNTRIES}
                   value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  maxLength={2}
-                  placeholder="ID"
-                  required
+                  onValueChange={(val) => setCountryCode(val || "ID")}
+                  placeholder="Pilih Negara"
+                  searchPlaceholder="Cari negara..."
                 />
+                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                  * Hanya mendukung negara yang terintegrasi dengan FedEx & kurs Frankfurter.
+                </p>
               </div>
             </div>
 
